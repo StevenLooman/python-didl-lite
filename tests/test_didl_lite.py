@@ -351,3 +351,18 @@ class TestDidlLite:
         assert genre_el is not None
         assert genre_el.text == 'Action'
         assert genre_el.attrib['id'] == 'genreId'
+
+    def test_item_missing_id(self):
+        didl_string = """
+<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
+           xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+           xmlns:dc="http://purl.org/dc/elements/1.1/"
+           xmlns:sec="http://www.sec.co.kr/">
+    <item restricted="1">
+        <dc:title>Video Item Title</dc:title>
+        <upnp:class>object.item</upnp:class>
+    </item>
+</DIDL-Lite>"""
+
+        items = didl_lite.from_xml_string(didl_string)
+        assert len(items) == 1

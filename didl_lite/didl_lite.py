@@ -44,8 +44,11 @@ class DidlObject:
         'write_status': ('upnp', 'writeStatus', 'O'),
     }
 
-    def __init__(self, descriptors=None, **properties):
+    def __init__(self, id="", parent_id="", descriptors=None, **properties):
         """Initializer."""
+        # pylint: disable=invalid-name,redefined-builtin
+        properties['id'] = id
+        properties['parent_id'] = parent_id
         properties['class'] = self.upnp_class
         self._ensure_required_properties(**properties)
         self._ensure_known_properties(**properties)
