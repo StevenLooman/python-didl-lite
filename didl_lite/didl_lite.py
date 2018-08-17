@@ -54,6 +54,7 @@ class DidlObject:
         self._ensure_known_properties(**properties)
         self._set_properties(**properties)
 
+        self.resources = properties.get('resources') or []
         self.descriptors = descriptors if descriptors else []
 
     def _ensure_required_properties(self, **properties):
@@ -70,7 +71,8 @@ class DidlObject:
 
     def _set_properties(self, **properties):
         """Set attributes from properties."""
-        for key, value in properties.items():
+        for key in self.didl_properties:
+            value = properties.get(key)
             setattr(self, key, value)
 
     @classmethod
@@ -116,8 +118,7 @@ class DidlObject:
         for res_el in xml_node.findall('./didl_lite:res', NAMESPACES):
             resource = Resource.from_xml(res_el)
             resources.append(resource)
-        if resources:
-            properties['resources'] = resources
+        properties['resources'] = resources
 
         # descriptors
         descriptors = []
@@ -134,7 +135,7 @@ class DidlObject:
 
         # properties
         for key, value in self.didl_properties.items():
-            if '@' in value[1] or not hasattr(self, key) or key == 'resources':
+            if '@' in value[1] or getattr(self, key) is None or key == 'resources':
                 continue
 
             tag = value[0] + ':' + value[1]
@@ -145,7 +146,7 @@ class DidlObject:
 
         # attributes and property@attributes
         for key, value in self.didl_properties.items():
-            if '@' not in value[1] or not hasattr(self, key):
+            if '@' not in value[1] or getattr(self, key) is None:
                 continue
 
             el_name, attr_name = value[1].split('@')
@@ -153,7 +154,7 @@ class DidlObject:
             property_el.attrib[attr_name] = getattr(self, key)
 
         # resource
-        for resource in getattr(self, 'resources', []):  # pylint: disable=no-member
+        for resource in self.resources:
             res_el = resource.to_xml()
             item_el.append(res_el)
 
@@ -915,7 +916,7 @@ def from_xml_el(xml_el: ET.Element) -> DidlObject:
 
 
 # upnp_class to python type mapping
-def type_by_upnp_class(upnp_class: str) -> DidlObject:
+def type_by_upnp_class(upnp_class: str) -> type:
     """Get DidlObject-type by upnp_class."""
     queue = DidlObject.__subclasses__()
     while queue:

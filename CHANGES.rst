@@ -3,6 +3,8 @@ Changes
 
 1.0.2 (unreleased)
 
+- Always set properties, even if no value was given
+
 
 1.0.1 (2018-06-29)
 
