@@ -6,6 +6,8 @@
 #  http://www.upnp.org/schemas/av/didl-lite-v2.xsd
 #  http://xml.coverpages.org/mpeg21-didl.html
 
+from typing import Any, Dict, List, Optional  # noqa: F401 pylint: disable=unused-import
+
 from xml.etree import ElementTree as ET
 
 
@@ -31,7 +33,7 @@ def _ns_tag(tag: str) -> str:
 class DidlObject:
     """DIDL Ojbect."""
 
-    tag = None
+    tag = None  # type: Optional[str]
     upnp_class = 'object'
     didl_properties = {
         'id': ('didl_lite', '@id', 'R'),
@@ -83,7 +85,7 @@ class DidlObject:
         I.e., parse XML and return instance.
         """
         # pylint: disable=too-many-locals
-        properties = {}
+        properties = {}  # type: Dict[str, Any]
 
         # properties
         for key, value in cls.didl_properties.items():
@@ -128,7 +130,7 @@ class DidlObject:
 
         return cls(descriptors=descriptors, **properties)
 
-    def to_xml(self) -> str:
+    def to_xml(self) -> ET.Element:
         """Convert self to XML Element."""
         item_el = ET.Element(_ns_tag(self.tag))
         elements = {'': item_el}
@@ -831,7 +833,7 @@ class Resource:
                    resolution=resolution, color_depth=color_depth,
                    protection=protection)
 
-    def to_xml(self) -> str:
+    def to_xml(self) -> ET.Element:
         """Convert self to XML."""
         attribs = {
             'protocolInfo': self.protocol_info,
@@ -885,13 +887,13 @@ def to_xml_string(*objects) -> str:
     return ET.tostring(root_el)
 
 
-def from_xml_string(xml_string) -> DidlObject:
+def from_xml_string(xml_string) -> List[DidlObject]:
     """Convert XML string to DIDL Objects."""
     xml_el = ET.fromstring(xml_string)
     return from_xml_el(xml_el)
 
 
-def from_xml_el(xml_el: ET.Element) -> DidlObject:
+def from_xml_el(xml_el: ET.Element) -> List[DidlObject]:
     """Convert XML Element to DIDL Objects."""
     didl_objects = []
 
@@ -902,8 +904,10 @@ def from_xml_el(xml_el: ET.Element) -> DidlObject:
             continue
 
         # construct item
-        upnp_class = child_el.find('./upnp:class', NAMESPACES).text
-        didl_object_type = type_by_upnp_class(upnp_class)
+        upnp_class = child_el.find('./upnp:class', NAMESPACES)
+        if not upnp_class or not upnp_class.text:
+            continue
+        didl_object_type = type_by_upnp_class(upnp_class.text)
         didl_object = didl_object_type.from_xml(child_el)
         didl_objects.append(didl_object)
 
