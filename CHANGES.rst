@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.1.1 (unreleased)
+
+- Typing fixes (@scop)
+
+
 1.1.0 (2018-08-17)
 
 - Always set properties, even if no value was given
