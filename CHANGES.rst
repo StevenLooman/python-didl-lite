@@ -1,9 +1,10 @@
 Changes
 =======
 
-1.1.1 (unreleased)
+1.2.0 (unreleased)
 
 - Typing fixes (@scop)
+- Allow unknown properties to be parsed and stored, such as albumArtURI on Items, as used by Kodi
 
 
 1.1.0 (2018-08-17)

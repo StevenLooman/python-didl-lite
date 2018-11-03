@@ -387,3 +387,28 @@ class TestDidlLite:
         assert hasattr(item, 'rating')
         assert item.rating is None
         assert len(item.resources) == 0
+
+    def test_extra_properties(self):
+        didl_string = """
+        <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
+                   xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+                   xmlns:dc="http://purl.org/dc/elements/1.1/"
+                   xmlns:sec="http://www.sec.co.kr/">
+            <item restricted="1">
+                <dc:title>Video Item Title</dc:title>
+                <upnp:class>object.item.videoItem</upnp:class>
+                <upnp:albumArtURI>extra_property</upnp:albumArtURI>
+            </item>
+        </DIDL-Lite>"""
+        items = didl_lite.from_xml_string(didl_string)
+        assert len(items) == 1
+
+        item = items[0]
+        assert hasattr(item, 'album_art_uri')
+        assert item.album_art_uri == 'extra_property'
+
+    def test_default_properties_set(self):
+        item = didl_lite.VideoItem(id='0', parent_id='0',
+                                   title='Video Item Title',
+                                   restricted='1')
+        assert hasattr(item, 'genre_type')  # property is set

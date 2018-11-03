@@ -6,8 +6,9 @@
 #  http://www.upnp.org/schemas/av/didl-lite-v2.xsd
 #  http://xml.coverpages.org/mpeg21-didl.html
 
-from typing import Any, Dict, List, Optional  # noqa: F401 pylint: disable=unused-import
+import re
 
+from typing import Any, Dict, List, Optional  # noqa: F401 pylint: disable=unused-import
 from xml.etree import ElementTree as ET
 
 
@@ -20,7 +21,12 @@ NAMESPACES = {
 
 
 def _ns_tag(tag: str) -> str:
-    """Expand namespace-alias to url."""
+    """
+    Expand namespace-alias to url.
+
+    E.g.,
+        _ns_tag('didl_lite:item') -> '{urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/}item'
+    """
     if ':' not in tag:
         return tag
 
@@ -29,22 +35,51 @@ def _ns_tag(tag: str) -> str:
     return '{{{0}}}{1}'.format(namespace_uri, tag)
 
 
+def _namespace_tag(namespaced_tag: str) -> str:
+    """
+    Extract namespace and tag from namespaced-tag.
+
+    E.g., _namespace_tag('{urn:schemas-upnp-org:metadata-1-0/upnp/}class') ->
+        'urn:schemas-upnp-org:metadata-1-0/upnp/', 'class'
+    """
+    if '}' not in namespaced_tag:
+        return None, namespaced_tag
+
+    idx = namespaced_tag.index('}')
+    namespace = namespaced_tag[1:idx]
+    tag = namespaced_tag[idx + 1:]
+    return namespace, tag
+
+
+def _to_camel_case(name):
+    sub1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', sub1).lower()
+
+
+def _didl_property_def_key(didl_property_def):
+    """Get Python property key for didl_property_def."""
+    if didl_property_def[1].startswith('@'):
+        return _to_camel_case(didl_property_def[1].replace('@', ''))
+
+    return _to_camel_case(didl_property_def[1].replace('@', '_'))
+
+
 # region: DidlObjects
 class DidlObject:
     """DIDL Ojbect."""
 
     tag = None  # type: Optional[str]
     upnp_class = 'object'
-    didl_properties = {
-        'id': ('didl_lite', '@id', 'R'),
-        'parent_id': ('didl_lite', '@parentID', 'R'),
-        'restricted': ('didl_lite', '@restricted', 'R'),
-        'title': ('dc', 'title', 'R'),
-        'class': ('upnp', 'class', 'R'),
-        'creator': ('dc', 'creator', 'O'),
-        'resources': ('didl_lite', 'res', 'O'),
-        'write_status': ('upnp', 'writeStatus', 'O'),
-    }
+    didl_properties_defs = [
+        ('didl_lite', '@id', 'R'),
+        ('didl_lite', '@parentID', 'R'),
+        ('didl_lite', '@restricted', 'R'),
+        ('dc', 'title', 'R'),
+        ('upnp', 'class', 'R'),
+        ('dc', 'creator', 'O'),
+        ('didl_lite', 'res', 'O'),
+        ('upnp', 'writeStatus', 'O'),
+    ]
 
     def __init__(self, id="", parent_id="", descriptors=None, **properties):
         """Initializer."""
@@ -53,7 +88,6 @@ class DidlObject:
         properties['parent_id'] = parent_id
         properties['class'] = self.upnp_class
         self._ensure_required_properties(**properties)
-        self._ensure_known_properties(**properties)
         self._set_properties(**properties)
 
         self.resources = properties.get('resources') or []
@@ -61,24 +95,23 @@ class DidlObject:
 
     def _ensure_required_properties(self, **properties):
         """Check if all required properties are given."""
-        for key, value in self.didl_properties.items():
-            if value[2] == 'R' and key not in properties:
+        for property_def in self.didl_properties_defs:
+            key = _didl_property_def_key(property_def)
+            if property_def[2] == 'R' and key not in properties:
                 raise Exception(key + ' is mandatory')
-
-    def _ensure_known_properties(self, **properties):
-        """Check if all given properties are known."""
-        for key in properties:
-            if key not in self.didl_properties:
-                raise Exception(key + ' is not a known property')
 
     def _set_properties(self, **properties):
         """Set attributes from properties."""
-        for key in self.didl_properties:
-            value = properties.get(key)
+        # ensure we have default/known slots
+        for property_def in self.didl_properties_defs:
+            key = _didl_property_def_key(property_def)
+            setattr(self, key, None)
+
+        for key, value in properties.items():
             setattr(self, key, value)
 
     @classmethod
-    def from_xml(cls, xml_node: ET.Element):
+    def from_xml(cls, xml_el: ET.Element):
         """
         Initialize from an XML node.
 
@@ -87,44 +120,37 @@ class DidlObject:
         # pylint: disable=too-many-locals
         properties = {}  # type: Dict[str, Any]
 
-        # properties
-        for key, value in cls.didl_properties.items():
-            if '@' in value[1] or key == 'resources':
+        # attributes
+        for attr_key, attr_value in xml_el.attrib.items():
+            key = _to_camel_case(attr_key)
+            properties[key] = attr_value
+
+        # child-nodes
+        for xml_child_node in xml_el:
+            if xml_child_node.tag == _ns_tag('didl_lite:res'):
                 continue
 
-            query = './' + value[0] + ':' + value[1]
-            property_el = xml_node.find(query, NAMESPACES)
-            if property_el is not None:
-                properties[key] = property_el.text
+            _, tag = _namespace_tag(xml_child_node.tag)
+            key = _to_camel_case(tag)
+            value = xml_child_node.text
+            properties[key] = value
 
-        # property@attributes
-        for key, value in cls.didl_properties.items():
-            if '@' not in value[1]:
-                continue
-
-            el_name, attr_name = value[1].split('@')
-            if el_name:
-                query = './' + value[0] + ':' + el_name
-                property_el = xml_node.find(query, NAMESPACES)
-            else:
-                property_el = xml_node
-            if property_el is None:
-                continue
-
-            if attr_name in property_el.attrib:
-                attr_value = property_el.attrib[attr_name]
+            # attributes of child nodes
+            parent_key = key
+            for attr_key, attr_value in xml_child_node.attrib.items():
+                key = parent_key + '_' + _to_camel_case(attr_key)
                 properties[key] = attr_value
 
         # resources
         resources = []
-        for res_el in xml_node.findall('./didl_lite:res', NAMESPACES):
+        for res_el in xml_el.findall('./didl_lite:res', NAMESPACES):
             resource = Resource.from_xml(res_el)
             resources.append(resource)
         properties['resources'] = resources
 
         # descriptors
         descriptors = []
-        for desc_el in xml_node.findall('./didl_lite:desc', NAMESPACES):
+        for desc_el in xml_el.findall('./didl_lite:desc', NAMESPACES):
             descriptor = Descriptor.from_xml(desc_el)
             descriptors.append(descriptor)
 
@@ -136,24 +162,34 @@ class DidlObject:
         elements = {'': item_el}
 
         # properties
-        for key, value in self.didl_properties.items():
-            if '@' in value[1] or getattr(self, key) is None or key == 'resources':
+        for property_def in self.didl_properties_defs:
+            if '@' in property_def[1]:
+                continue
+            key = _didl_property_def_key(property_def)
+
+            if getattr(self, key) is None or \
+               key == 'res':  # no resources, handled later on
                 continue
 
-            tag = value[0] + ':' + value[1]
+            tag = property_def[0] + ':' + property_def[1]
             property_el = ET.Element(_ns_tag(tag), {})
             property_el.text = getattr(self, key)
             item_el.append(property_el)
-            elements[value[1]] = property_el
+            elements[property_def[1]] = property_el
 
         # attributes and property@attributes
-        for key, value in self.didl_properties.items():
-            if '@' not in value[1] or getattr(self, key) is None:
+        for property_def in self.didl_properties_defs:
+            if '@' not in property_def[1]:
                 continue
 
-            el_name, attr_name = value[1].split('@')
+            key = _didl_property_def_key(property_def)
+            value = getattr(self, key)
+            if value is None:
+                continue
+
+            el_name, attr_name = property_def[1].split('@')
             property_el = elements[el_name]
-            property_el.attrib[attr_name] = getattr(self, key)
+            property_el.attrib[attr_name] = value
 
         # resource
         for resource in self.resources:
@@ -176,10 +212,10 @@ class Item(DidlObject):
 
     tag = 'item'
     upnp_class = 'object.item'
-    didl_properties = dict(**DidlObject.didl_properties, **{
-        'ref_id': ('didl_lite', '@refID', 'O'),  # actually, R, but ignore for now
-        'bookmark_id': ('upnp', 'bookmarkID', 'O'),
-    })
+    didl_properties_defs = DidlObject.didl_properties_defs + [
+        ('didl_lite', '@refID', 'O'),  # actually, R, but ignore for now
+        ('upnp', 'bookmarkID', 'O'),
+    ]
 
 
 class ImageItem(Item):
@@ -188,15 +224,15 @@ class ImageItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.imageItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'rating': ('upnp', 'rating', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'publisher': ('dc', 'publisher', 'O'),
-        'date': ('dc', 'date', 'O'),
-        'rights': ('dc', 'rights', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'longDescription', 'O'),
+        ('upnp', 'storageMedium', 'O'),
+        ('upnp', 'rating', 'O'),
+        ('dc', 'description', 'O'),
+        ('dc', 'publisher', 'O'),
+        ('dc', 'date', 'O'),
+        ('dc', 'rights', 'O'),
+    ]
 
 
 class Photo(ImageItem):
@@ -205,9 +241,9 @@ class Photo(ImageItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.imageItem.photo'
-    didl_properties = dict(**ImageItem.didl_properties, **{
-        'album': ('upnp', 'album', 'O'),
-    })
+    didl_properties_defs = ImageItem.didl_properties_defs + [
+        ('upnp', 'album', 'O'),
+    ]
 
 
 class AudioItem(Item):
@@ -216,15 +252,15 @@ class AudioItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.audioItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'genre': ('upnp', 'genre', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'publisher': ('dc', 'publisher', 'O'),
-        'language': ('dc', 'language', 'O'),
-        'relation': ('dc', 'relation', 'O'),
-        'rights': ('dc', 'rights', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'genre', 'O'),
+        ('dc', 'description', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('dc', 'publisher', 'O'),
+        ('dc', 'language', 'O'),
+        ('dc', 'relation', 'O'),
+        ('dc', 'rights', 'O'),
+    ]
 
 
 class MusicTrack(AudioItem):
@@ -233,15 +269,15 @@ class MusicTrack(AudioItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.audioItem.musicTrack'
-    didl_properties = dict(**AudioItem.didl_properties, **{
-        'artist': ('upnp', 'artist', 'O'),
-        'album': ('upnp', 'album', 'O'),
-        'original_track_number': ('upnp', 'originalTrackNumber', 'O'),
-        'playlist': ('upnp', 'playlist', 'O'),
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'contributor': ('dc', 'contributor', 'O'),
-        'date': ('dc', 'date', 'O'),
-    })
+    didl_properties_defs = AudioItem.didl_properties_defs + [
+        ('upnp', 'artist', 'O'),
+        ('upnp', 'album', 'O'),
+        ('upnp', 'originalTrackNumber', 'O'),
+        ('upnp', 'playlist', 'O'),
+        ('upnp', 'storageMedium', 'O'),
+        ('dc', 'contributor', 'O'),
+        ('dc', 'date', 'O'),
+    ]
 
 
 class AudioBroadcast(AudioItem):
@@ -250,17 +286,17 @@ class AudioBroadcast(AudioItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.audioItem.audioBroadcast'
-    didl_properties = dict(**AudioItem.didl_properties, **{
-        'region': ('upnp', 'region', 'O'),
-        'radio_call_sign': ('upnp', 'radioCallSign', 'O'),
-        'radio_station_id': ('upnp', 'radioStationID', 'O'),
-        'radio_band': ('upnp', 'radioBand', 'O'),
-        'channel_nr': ('upnp', 'channelNr', 'O'),
-        'signal_strength': ('upnp', 'signalStrength', 'O'),
-        'signal_locked': ('upnp', 'signalLocked', 'O'),
-        'tuned': ('upnp', 'tuned', 'O'),
-        'recordable': ('upnp', 'recordable', 'O'),
-    })
+    didl_properties_defs = AudioItem.didl_properties_defs + [
+        ('upnp', 'region', 'O'),
+        ('upnp', 'radioCallSign', 'O'),
+        ('upnp', 'radioStationID', 'O'),
+        ('upnp', 'radioBand', 'O'),
+        ('upnp', 'channelNr', 'O'),
+        ('upnp', 'signalStrength', 'O'),
+        ('upnp', 'signalLocked', 'O'),
+        ('upnp', 'tuned', 'O'),
+        ('upnp', 'recordable', 'O'),
+    ]
 
 
 class AudioBook(AudioItem):
@@ -269,12 +305,12 @@ class AudioBook(AudioItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.audioItem.audioBook'
-    didl_properties = dict(**AudioItem.didl_properties, **{
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'producer': ('upnp', 'producer', 'O'),
-        'contributor': ('dc', 'contributor', 'O'),
-        'date': ('dc', 'date', 'O'),
-    })
+    didl_properties_defs = AudioItem.didl_properties_defs + [
+        ('upnp', 'storageMedium', 'O'),
+        ('upnp', 'producer', 'O'),
+        ('dc', 'contributor', 'O'),
+        ('dc', 'date', 'O'),
+    ]
 
 
 class VideoItem(Item):
@@ -283,25 +319,25 @@ class VideoItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.videoItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'genre': ('upnp', 'genre', 'O'),
-        'genre_id': ('upnp', 'genre@id', 'O'),
-        'genre_type': ('upnp', 'genre@type', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'producer': ('upnp', 'producer', 'O'),
-        'rating': ('upnp', 'rating', 'O'),
-        'actor': ('upnp', 'actor', 'O'),
-        'director': ('upnp', 'director', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'publisher': ('dc', 'publisher', 'O'),
-        'language': ('dc', 'language', 'O'),
-        'relation': ('dc', 'relation', 'O'),
-        'playback_count': ('upnp', 'playbackCount', 'O'),
-        'last_playback_time': ('upnp', 'lastPlaybackTime', 'O'),
-        'last_playback_position': ('upnp', 'lastPlaybackPosition', 'O'),
-        'recorded_day_of_week': ('upnp', 'recordedDayOfWeek', 'O'),
-        'srsRecordScheduleID': ('upnp', 'srsRecordScheduleID', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'genre@id', 'O'),
+        ('upnp', 'genre@type', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('upnp', 'producer', 'O'),
+        ('upnp', 'rating', 'O'),
+        ('upnp', 'actor', 'O'),
+        ('upnp', 'director', 'O'),
+        ('dc', 'description', 'O'),
+        ('dc', 'publisher', 'O'),
+        ('dc', 'language', 'O'),
+        ('dc', 'relation', 'O'),
+        ('upnp', 'playbackCount', 'O'),
+        ('upnp', 'lastPlaybackTime', 'O'),
+        ('upnp', 'lastPlaybackPosition', 'O'),
+        ('upnp', 'recordedDayOfWeek', 'O'),
+        ('upnp', 'srsRecordScheduleID', 'O'),
+    ]
 
 
 class Movie(VideoItem):
@@ -310,17 +346,17 @@ class Movie(VideoItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.videoItem.movie'
-    didl_properties = dict(**VideoItem.didl_properties, **{
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'dvd_region_code': ('upnp', 'DVDRegionCode', 'O'),
-        'channel_name': ('upnp', 'channelName', 'O'),
-        'scheduled_start_time': ('upnp', 'scheduledStartTime', 'O'),
-        'scheduled_end_time': ('upnp', 'scheduledEndTime', 'O'),
-        'program_title': ('upnp', 'programTitle', 'O'),
-        'series_title': ('upnp', 'seriesTitle', 'O'),
-        'episode_count': ('upnp', 'episodeCount', 'O'),
-        'episode_nr': ('upnp', 'episodeNr', 'O'),
-    })
+    didl_properties_defs = VideoItem.didl_properties_defs + [
+        ('upnp', 'storageMedium', 'O'),
+        ('upnp', 'DVDRegionCode', 'O'),
+        ('upnp', 'channelName', 'O'),
+        ('upnp', 'scheduledStartTime', 'O'),
+        ('upnp', 'scheduledEndTime', 'O'),
+        ('upnp', 'programTitle', 'O'),
+        ('upnp', 'seriesTitle', 'O'),
+        ('upnp', 'episodeCount', 'O'),
+        ('upnp', 'episodeNr', 'O'),
+    ]
 
 
 class VideoBroadcast(VideoItem):
@@ -329,18 +365,18 @@ class VideoBroadcast(VideoItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.videoItem.videoBroadcast'
-    didl_properties = dict(**VideoItem.didl_properties, **{
-        'icon': ('upnp', 'icon', 'O'),
-        'region': ('upnp', 'region', 'O'),
-        'channel_nr': ('upnp', 'channelNr', 'O'),
-        'signal_strength': ('upnp', 'signalStrength', 'O'),
-        'signal_locked': ('upnp', 'signalLocked', 'O'),
-        'tuned': ('upnp', 'tuned', 'O'),
-        'recordable': ('upnp', 'recordable', 'O'),
-        'call_sign': ('upnp', 'callSign', 'O'),
-        'price': ('upnp', 'price', 'O'),
-        'pay_per_view': ('upnp', 'payPerView', 'O'),
-    })
+    didl_properties_defs = VideoItem.didl_properties_defs + [
+        ('upnp', 'icon', 'O'),
+        ('upnp', 'region', 'O'),
+        ('upnp', 'channelNr', 'O'),
+        ('upnp', 'signalStrength', 'O'),
+        ('upnp', 'signalLocked', 'O'),
+        ('upnp', 'tuned', 'O'),
+        ('upnp', 'recordable', 'O'),
+        ('upnp', 'callSign', 'O'),
+        ('upnp', 'price', 'O'),
+        ('upnp', 'payPerView', 'O'),
+    ]
 
 
 class MusicVideoClip(VideoItem):
@@ -349,16 +385,16 @@ class MusicVideoClip(VideoItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.videoItem.musicVideoClip'
-    didl_properties = dict(**VideoItem.didl_properties, **{
-        'artist': ('upnp', 'artist', 'O'),
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'album': ('upnp', 'album', 'O'),
-        'scheduled_start_time': ('upnp', 'scheduledStartTime', 'O'),
-        'scheduled_stop_time': ('upnp', 'scheduledStopTime', 'O'),
-        # 'director': ('upnp', 'director', 'O'),  # duplicate in standard
-        'contributor': ('dc', 'contributor', 'O'),
-        'date': ('dc', 'date', 'O'),
-    })
+    didl_properties_defs = VideoItem.didl_properties_defs + [
+        ('upnp', 'artist', 'O'),
+        ('upnp', 'storageMedium', 'O'),
+        ('upnp', 'album', 'O'),
+        ('upnp', 'scheduledStartTime', 'O'),
+        ('upnp', 'scheduledStopTime', 'O'),
+        # ('upnp', 'director', 'O'),  # duplicate in standard
+        ('dc', 'contributor', 'O'),
+        ('dc', 'date', 'O'),
+    ]
 
 
 class PlaylistItem(Item):
@@ -367,15 +403,15 @@ class PlaylistItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.playlistItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'artist': ('upnp', 'artist', 'O'),
-        'genre': ('upnp', 'genre', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'date': ('dc', 'date', 'O'),
-        'language': ('dc', 'language', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'artist', 'O'),
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('upnp', 'storageMedium', 'O'),
+        ('dc', 'description', 'O'),
+        ('dc', 'date', 'O'),
+        ('dc', 'language', 'O'),
+    ]
 
 
 class TextItem(Item):
@@ -384,20 +420,20 @@ class TextItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.textItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'author': ('upnp', 'author', 'O'),
-        'res_protection': ('upnp', 'res@protection', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'storage_medium': ('upnp', 'storageMedium', 'O'),
-        'rating': ('upnp', 'rating', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'publisher': ('dc', 'publisher', 'O'),
-        'contributor': ('dc', 'contributor', 'O'),
-        'date': ('dc', 'date', 'O'),
-        'relation': ('dc', 'relation', 'O'),
-        'language': ('dc', 'language', 'O'),
-        'rights': ('dc', 'rights', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'author', 'O'),
+        ('upnp', 'res@protection', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('upnp', 'storageMedium', 'O'),
+        ('upnp', 'rating', 'O'),
+        ('dc', 'description', 'O'),
+        ('dc', 'publisher', 'O'),
+        ('dc', 'contributor', 'O'),
+        ('dc', 'date', 'O'),
+        ('dc', 'relation', 'O'),
+        ('dc', 'language', 'O'),
+        ('dc', 'rights', 'O'),
+    ]
 
 
 class BookmarkItem(Item):
@@ -406,15 +442,15 @@ class BookmarkItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.bookmarkItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'bookmarkedObjectID': ('upnp', 'bookmarkedObjectID', 'R'),
-        'neverPlayable': ('upnp', 'neverPlayable', 'O'),
-        'deviceUDN': ('upnp', 'deviceUDN', 'R'),
-        'serviceType': ('upnp', 'serviceType', 'R'),
-        'serviceId': ('upnp', 'serviceId', 'R'),
-        'date': ('dc', 'date', 'O'),
-        'stateVariableCollection': ('dc', 'stateVariableCollection', 'R'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'bookmarkedObjectID', 'R'),
+        ('upnp', 'neverPlayable', 'O'),
+        ('upnp', 'deviceUDN', 'R'),
+        ('upnp', 'serviceType', 'R'),
+        ('upnp', 'serviceId', 'R'),
+        ('dc', 'date', 'O'),
+        ('dc', 'stateVariableCollection', 'R'),
+    ]
 
 
 class EpgItem(Item):
@@ -423,57 +459,57 @@ class EpgItem(Item):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.epgItem'
-    didl_properties = dict(**Item.didl_properties, **{
-        'channel_group_name': ('upnp', 'channelGroupName', 'O'),
-        'channel_group_name_id': ('upnp', 'channelGroupName@id', 'O'),
-        'epg_provider_name': ('upnp', 'epgProviderName', 'O'),
-        'service_provider': ('upnp', 'serviceProvider', 'O'),
-        'channel_name': ('upnp', 'channelName', 'O'),
-        'channel_nr': ('upnp', 'channelNr', 'O'),
-        'program_title': ('upnp', 'programTitle', 'O'),
-        'series_title': ('upnp', 'seriesTitle', 'O'),
-        'program_id': ('upnp', 'programID', 'O'),
-        'program_id_type': ('upnp', 'programID@type', 'O'),
-        'series_id': ('upnp', 'seriesID', 'O'),
-        'series_id_type': ('upnp', 'seriesID@type', 'O'),
-        'channel_id': ('upnp', 'channelID', 'O'),
-        'channel_id_type': ('upnp', 'channelID@type', 'O'),
-        'episode_count': ('upnp', 'episodeCount', 'O'),
-        'episode_number': ('upnp', 'episodeNumber', 'O'),
-        'program_code': ('upnp', 'programCode', 'O'),
-        'program_code_type': ('upnp', 'programCode_type', 'O'),
-        'rating': ('upnp', 'rating', 'O'),
-        'rating_type': ('upnp', 'rating@type', 'O'),
-        'episode_type': ('upnp', 'episodeType', 'O'),
-        'genre': ('upnp', 'genre', 'O'),
-        'genre_id': ('upnp', 'genre@id', 'O'),
-        'genre_extended': ('upnp', 'genre@extended', 'O'),
-        'artist': ('upnp', 'artist', 'O'),
-        'artist_role': ('upnp', 'artist@role', 'O'),
-        'actor': ('upnp', 'actor', 'O'),
-        'actor_role': ('upnp', 'actor@role', 'O'),
-        'author': ('upnp', 'author', 'O'),
-        'author_role': ('upnp', 'author@role', 'O'),
-        'producer': ('upnp', 'producer', 'O'),
-        'director': ('upnp', 'director', 'O'),
-        'publisher': ('dc', 'publisher', 'O'),
-        'contributor': ('dc', 'contributor', 'O'),
-        'network_affiliation': ('upnp', 'networkAffiliation', 'O'),
-        # 'service_provider': ('upnp', 'serviceProvider', 'O'),  # duplicate in standard
-        'price': ('upnp', 'price', 'O'),
-        'price_currency': ('upnp', 'price@currency', 'O'),
-        'pay_per_view': ('upnp', 'payPerView', 'O'),
-        # 'epg_provider_name': ('upnp', 'epgProviderName', 'O'),  # duplicate in standard
-        'description': ('dc', 'description', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'icon': ('upnp', 'icon', 'O'),
-        'region': ('upnp', 'region', 'O'),
-        'language': ('dc', 'language', 'O'),
-        'relation': ('dc', 'relation', 'O'),
-        'scheduled_start_time': ('upnp', 'scheduledStartTime', 'O'),
-        'scheduled_end_time': ('upnp', 'scheduledEndTime', 'O'),
-        'recordable': ('upnp', 'recordable', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'channelGroupName', 'O'),
+        ('upnp', 'channelGroupName@id', 'O'),
+        ('upnp', 'epgProviderName', 'O'),
+        ('upnp', 'serviceProvider', 'O'),
+        ('upnp', 'channelName', 'O'),
+        ('upnp', 'channelNr', 'O'),
+        ('upnp', 'programTitle', 'O'),
+        ('upnp', 'seriesTitle', 'O'),
+        ('upnp', 'programID', 'O'),
+        ('upnp', 'programID@type', 'O'),
+        ('upnp', 'seriesID', 'O'),
+        ('upnp', 'seriesID@type', 'O'),
+        ('upnp', 'channelID', 'O'),
+        ('upnp', 'channelID@type', 'O'),
+        ('upnp', 'episodeCount', 'O'),
+        ('upnp', 'episodeNumber', 'O'),
+        ('upnp', 'programCode', 'O'),
+        ('upnp', 'programCode_type', 'O'),
+        ('upnp', 'rating', 'O'),
+        ('upnp', 'rating@type', 'O'),
+        ('upnp', 'episodeType', 'O'),
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'genre@id', 'O'),
+        ('upnp', 'genre@extended', 'O'),
+        ('upnp', 'artist', 'O'),
+        ('upnp', 'artist@role', 'O'),
+        ('upnp', 'actor', 'O'),
+        ('upnp', 'actor@role', 'O'),
+        ('upnp', 'author', 'O'),
+        ('upnp', 'author@role', 'O'),
+        ('upnp', 'producer', 'O'),
+        ('upnp', 'director', 'O'),
+        ('dc', 'publisher', 'O'),
+        ('dc', 'contributor', 'O'),
+        ('upnp', 'networkAffiliation', 'O'),
+        # ('upnp', 'serviceProvider', 'O'),  # duplicate in standard
+        ('upnp', 'price', 'O'),
+        ('upnp', 'price@currency', 'O'),
+        ('upnp', 'payPerView', 'O'),
+        # ('upnp', 'epgProviderName', 'O'),  # duplicate in standard
+        ('dc', 'description', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('upnp', 'icon', 'O'),
+        ('upnp', 'region', 'O'),
+        ('dc', 'language', 'O'),
+        ('dc', 'relation', 'O'),
+        ('upnp', 'scheduledStartTime', 'O'),
+        ('upnp', 'scheduledEndTime', 'O'),
+        ('upnp', 'recordable', 'O'),
+    ]
 
 
 class AudioProgram(EpgItem):
@@ -482,11 +518,11 @@ class AudioProgram(EpgItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.epgItem.audioProgram'
-    didl_properties = dict(**Item.didl_properties, **{
-        'radio_call_sign': ('upnp', 'radioCallSign', 'O'),
-        'radio_station_id': ('upnp', 'radioStationID', 'O'),
-        'radio_band': ('upnp', 'radioBand', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'radioCallSign', 'O'),
+        ('upnp', 'radioStationID', 'O'),
+        ('upnp', 'radioBand', 'O'),
+    ]
 
 
 class VideoProgram(EpgItem):
@@ -495,11 +531,11 @@ class VideoProgram(EpgItem):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.item.epgItem.videoProgram'
-    didl_properties = dict(**Item.didl_properties, **{
-        'price': ('upnp', 'price', 'O'),
-        'price_currency': ('upnp', 'price@currency', 'O'),
-        'payPerView': ('upnp', 'payPerView', 'O'),
-    })
+    didl_properties_defs = Item.didl_properties_defs + [
+        ('upnp', 'price', 'O'),
+        ('upnp', 'price@currency', 'O'),
+        ('upnp', 'payPerView', 'O'),
+    ]
 # endregion
 
 
@@ -511,25 +547,25 @@ class Container(DidlObject, list):
 
     tag = 'container'
     upnp_class = 'object.container'
-    didl_properties = dict(**DidlObject.didl_properties, **{
-        'child_count': ('didl_lite', '@childCount', 'O'),
-        'create_class': ('upnp', 'createClass', 'O'),
-        'search_class': ('upnp', 'searchClass', 'O'),
-        'searchable': ('didl_lite', '@searchable', 'O'),
-        'never_playable': ('didl_lite', '@neverPlayable', 'O'),
-    })
+    didl_properties_defs = DidlObject.didl_properties_defs + [
+        ('didl_lite', '@childCount', 'O'),
+        ('upnp', 'createClass', 'O'),
+        ('upnp', 'searchClass', 'O'),
+        ('didl_lite', '@searchable', 'O'),
+        ('didl_lite', '@neverPlayable', 'O'),
+    ]
 
     @classmethod
-    def from_xml(cls, xml_node: ET.Element):
+    def from_xml(cls, xml_el: ET.Element):
         """
         Initialize from an XML node.
 
         I.e., parse XML and return instance.
         """
-        instance = super().from_xml(xml_node)
+        instance = super().from_xml(xml_el)
 
         # add all children
-        didl_objects = from_xml_el(xml_node)
+        didl_objects = from_xml_el(xml_el)
         instance.extend(didl_objects)  # pylint: disable=no-member
 
         return instance
@@ -551,9 +587,9 @@ class Person(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.person'
-    didl_properties = dict(**Container.didl_properties, **{
-        'language': ('dc', 'language', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('dc', 'language', 'O'),
+    ]
 
 
 class MusicArtist(Person):
@@ -562,10 +598,10 @@ class MusicArtist(Person):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.person.musicArtist'
-    didl_properties = dict(**Container.didl_properties, **{
-        'genre': ('upnp', 'genre', 'O'),
-        'artist_discography_uri': ('upnp', 'artistDiscographyURI', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'artistDiscographyURI', 'O'),
+    ]
 
 
 class PlaylistContainer(Container):
@@ -574,18 +610,18 @@ class PlaylistContainer(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.playlistContainer'
-    didl_properties = dict(**Container.didl_properties, **{
-        'artist': ('upnp', 'artist', 'O'),
-        'genre': ('upnp', 'genre', 'O'),
-        'longDescription': ('upnp', 'longDescription', 'O'),
-        'producer': ('upnp', 'producer', 'O'),
-        'storageMedium': ('upnp', 'storageMedium', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'contributor': ('dc', 'contributor', 'O'),
-        'date': ('dc', 'date', 'O'),
-        'language': ('dc', 'language', 'O'),
-        'rights': ('dc', 'rights', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'artist', 'O'),
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('upnp', 'producer', 'O'),
+        ('upnp', 'storageMedium', 'O'),
+        ('dc', 'description', 'O'),
+        ('dc', 'contributor', 'O'),
+        ('dc', 'date', 'O'),
+        ('dc', 'language', 'O'),
+        ('dc', 'rights', 'O'),
+    ]
 
 
 class Album(Container):
@@ -594,16 +630,16 @@ class Album(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.album'
-    didl_properties = dict(**Container.didl_properties, **{
-        'storageMedium': ('upnp', 'storageMedium', 'O'),
-        'longDescription': ('dc', 'longDescription', 'O'),
-        'description': ('dc', 'description', 'O'),
-        'publisher': ('dc', 'publisher', 'O'),
-        'contributor': ('dc', 'contributor', 'O'),
-        'date': ('dc', 'date', 'O'),
-        'relation': ('dc', 'relation', 'O'),
-        'rights': ('dc', 'rights', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'storageMedium', 'O'),
+        ('dc', 'longDescription', 'O'),
+        ('dc', 'description', 'O'),
+        ('dc', 'publisher', 'O'),
+        ('dc', 'contributor', 'O'),
+        ('dc', 'date', 'O'),
+        ('dc', 'relation', 'O'),
+        ('dc', 'rights', 'O'),
+    ]
 
 
 class MusicAlbum(Album):
@@ -612,13 +648,13 @@ class MusicAlbum(Album):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.album.musicAlbum'
-    didl_properties = dict(**Container.didl_properties, **{
-        'artist': ('upnp', 'artist', 'O'),
-        'genre': ('upnp', 'genre', 'O'),
-        'producer': ('upnp', 'producer', 'O'),
-        'album_art_uri': ('upnp', 'albumArtURI', 'O'),
-        'toc': ('upnp', 'toc', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'artist', 'O'),
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'producer', 'O'),
+        ('upnp', 'albumArtURI', 'O'),
+        ('upnp', 'toc', 'O'),
+    ]
 
 
 class PhotoAlbum(Album):
@@ -627,8 +663,8 @@ class PhotoAlbum(Album):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.album.photoAlbum'
-    didl_properties = dict(**Container.didl_properties, **{
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+    ]
 
 
 class Genre(Container):
@@ -637,11 +673,11 @@ class Genre(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.genre'
-    didl_properties = dict(**Container.didl_properties, **{
-        'genre': ('upnp', 'genre', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'description': ('dc', 'description', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('dc', 'description', 'O'),
+    ]
 
 
 class MusicGenre(Genre):
@@ -650,8 +686,8 @@ class MusicGenre(Genre):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.genre.musicGenre'
-    didl_properties = dict(**Container.didl_properties, **{
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+    ]
 
 
 class MovieGenre(Genre):
@@ -660,8 +696,8 @@ class MovieGenre(Genre):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.genre.movieGenre'
-    didl_properties = dict(**Container.didl_properties, **{
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+    ]
 
 
 class ChannelGroup(Container):
@@ -670,14 +706,14 @@ class ChannelGroup(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.channelGroup'
-    didl_properties = dict(**Container.didl_properties, **{
-        'channelGroupName': ('upnp', 'channelGroupName', 'O'),
-        'channelGroupName_id': ('upnp', 'channelGroupName@id', 'O'),
-        'epgProviderName': ('upnp', 'epgProviderName', 'O'),
-        'serviceProvider': ('upnp', 'serviceProvider', 'O'),
-        'icon': ('upnp', 'icon', 'O'),
-        'region': ('upnp', 'region', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'channelGroupName', 'O'),
+        ('upnp', 'channelGroupName@id', 'O'),
+        ('upnp', 'epgProviderName', 'O'),
+        ('upnp', 'serviceProvider', 'O'),
+        ('upnp', 'icon', 'O'),
+        ('upnp', 'region', 'O'),
+    ]
 
 
 class AudioChannelGroup(ChannelGroup):
@@ -686,8 +722,8 @@ class AudioChannelGroup(ChannelGroup):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.channelGroup.audioChannelGroup'
-    didl_properties = dict(**Container.didl_properties, **{
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+    ]
 
 
 class VideoChannelGroup(ChannelGroup):
@@ -696,8 +732,8 @@ class VideoChannelGroup(ChannelGroup):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.channelGroup.videoChannelGroup'
-    didl_properties = dict(**Container.didl_properties, **{
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+    ]
 
 
 class EpgContainer(Container):
@@ -706,31 +742,31 @@ class EpgContainer(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.epgContainer'
-    didl_properties = dict(**Container.didl_properties, **{
-        'channel_group_name': ('upnp', 'channelGroupName', 'O'),
-        'channel_group_name_id': ('upnp', 'channelGroupName@id', 'O'),
-        'epg_provider_name': ('upnp', 'epgProviderName', 'O'),
-        'service_provider': ('upnp', 'serviceProvider', 'O'),
-        'channel_name': ('upnp', 'channelName', 'O'),
-        'channel_nr': ('upnp', 'channelNr', 'O'),
-        'channel_id': ('upnp', 'channelID', 'O'),
-        'channel_id_type': ('upnp', 'channelID@type', 'O'),
-        'radio_call_sign': ('upnp', 'radioCallSign', 'O'),
-        'radio_station_id': ('upnp', 'radioStationID', 'O'),
-        'radio_band': ('upnp', 'radioBand', 'O'),
-        'call_sign': ('upnp', 'callSign', 'O'),
-        'network_affiliation': ('upnp', 'networkAffiliation', 'O'),
-        # 'service_provider': ('upnp', 'serviceProvider', 'O'),  # duplicate in standard
-        'price': ('upnp', 'price', 'O'),
-        'price_currency': ('upnp', 'price@currency', 'O'),
-        'pay_per_view': ('upnp', 'payPerView', 'O'),
-        # 'epg_provider_name': ('upnp', 'epgProviderName', 'O'),  # duplicate in standard
-        'icon': ('upnp', 'icon', 'O'),
-        'region': ('upnp', 'region', 'O'),
-        'language': ('dc', 'language', 'O'),
-        'relation': ('dc', 'relation', 'O'),
-        'date_time_range': ('upnp', 'dateTimeRange', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'channelGroupName', 'O'),
+        ('upnp', 'channelGroupName@id', 'O'),
+        ('upnp', 'epgProviderName', 'O'),
+        ('upnp', 'serviceProvider', 'O'),
+        ('upnp', 'channelName', 'O'),
+        ('upnp', 'channelNr', 'O'),
+        ('upnp', 'channelID', 'O'),
+        ('upnp', 'channelID@type', 'O'),
+        ('upnp', 'radioCallSign', 'O'),
+        ('upnp', 'radioStationID', 'O'),
+        ('upnp', 'radioBand', 'O'),
+        ('upnp', 'callSign', 'O'),
+        ('upnp', 'networkAffiliation', 'O'),
+        # ('upnp', 'serviceProvider', 'O'),  # duplicate in standard
+        ('upnp', 'price', 'O'),
+        ('upnp', 'price@currency', 'O'),
+        ('upnp', 'payPerView', 'O'),
+        # ('upnp', 'epgProviderName', 'O'),  # duplicate in standard
+        ('upnp', 'icon', 'O'),
+        ('upnp', 'region', 'O'),
+        ('dc', 'language', 'O'),
+        ('dc', 'relation', 'O'),
+        ('upnp', 'dateTimeRange', 'O'),
+    ]
 
 
 class StorageSystem(Container):
@@ -739,13 +775,13 @@ class StorageSystem(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.storageSystem'
-    didl_properties = dict(**Container.didl_properties, **{
-        'storage_total': ('upnp', 'storageTotal', 'R'),
-        'storage_used': ('upnp', 'storageUsed', 'R'),
-        'storage_free': ('upnp', 'storageFree', 'R'),
-        'storage_max_partition': ('upnp', 'storageMaxPartition', 'R'),
-        'storage_medium': ('upnp', 'storageMedium', 'R'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'storageTotal', 'R'),
+        ('upnp', 'storageUsed', 'R'),
+        ('upnp', 'storageFree', 'R'),
+        ('upnp', 'storageMaxPartition', 'R'),
+        ('upnp', 'storageMedium', 'R'),
+    ]
 
 
 class StorageVolume(Container):
@@ -754,12 +790,12 @@ class StorageVolume(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.storageVolume'
-    didl_properties = dict(**Container.didl_properties, **{
-        'storage_total': ('upnp', 'storageTotal', 'R'),
-        'storage_used': ('upnp', 'storageUsed', 'R'),
-        'storage_free': ('upnp', 'storageFree', 'R'),
-        'storage_medium': ('upnp', 'storageMedium', 'R'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'storageTotal', 'R'),
+        ('upnp', 'storageUsed', 'R'),
+        ('upnp', 'storageFree', 'R'),
+        ('upnp', 'storageMedium', 'R'),
+    ]
 
 
 class StorageFolder(Container):
@@ -768,9 +804,9 @@ class StorageFolder(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.storageFolder'
-    didl_properties = dict(**Container.didl_properties, **{
-        'storage_used': ('upnp', 'storageUsed', 'R'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'storageUsed', 'R'),
+    ]
 
 
 class BookmarkFolder(Container):
@@ -779,11 +815,11 @@ class BookmarkFolder(Container):
     # pylint: disable=too-few-public-methods
 
     upnp_class = 'object.container.bookmarkFolder'
-    didl_properties = dict(**Container.didl_properties, **{
-        'genre': ('upnp', 'genre', 'O'),
-        'long_description': ('upnp', 'longDescription', 'O'),
-        'description': ('dc', 'description', 'O'),
-    })
+    didl_properties_defs = Container.didl_properties_defs + [
+        ('upnp', 'genre', 'O'),
+        ('upnp', 'longDescription', 'O'),
+        ('dc', 'description', 'O'),
+    ]
 # endregion
 
 
@@ -905,7 +941,7 @@ def from_xml_el(xml_el: ET.Element) -> List[DidlObject]:
 
         # construct item
         upnp_class = child_el.find('./upnp:class', NAMESPACES)
-        if not upnp_class or not upnp_class.text:
+        if upnp_class is None or not upnp_class.text:
             continue
         didl_object_type = type_by_upnp_class(upnp_class.text)
         didl_object = didl_object_type.from_xml(child_el)
