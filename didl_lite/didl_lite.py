@@ -8,7 +8,8 @@
 
 import re
 
-from typing import Any, Dict, List, Optional  # noqa: F401 pylint: disable=unused-import
+from typing import Any, Dict  # noqa: F401 pylint: disable=unused-import
+from typing import List, Optional, Tuple, Type
 from xml.etree import ElementTree as ET
 
 
@@ -35,7 +36,7 @@ def _ns_tag(tag: str) -> str:
     return '{{{0}}}{1}'.format(namespace_uri, tag)
 
 
-def _namespace_tag(namespaced_tag: str) -> str:
+def _namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
     """
     Extract namespace and tag from namespaced-tag.
 
@@ -911,7 +912,7 @@ class Descriptor:
 # endregion
 
 
-def to_xml_string(*objects) -> str:
+def to_xml_string(*objects) -> bytes:
     """Convert items to DIDL-Lite XML string."""
     root_el = ET.Element(_ns_tag('DIDL-Lite'), {})
     root_el.attrib['xmlns'] = NAMESPACES['didl_lite']
@@ -956,7 +957,7 @@ def from_xml_el(xml_el: ET.Element) -> List[DidlObject]:
 
 
 # upnp_class to python type mapping
-def type_by_upnp_class(upnp_class: str) -> type:
+def type_by_upnp_class(upnp_class: str) -> Optional[Type[DidlObject]]:
     """Get DidlObject-type by upnp_class."""
     queue = DidlObject.__subclasses__()
     while queue:
@@ -965,3 +966,4 @@ def type_by_upnp_class(upnp_class: str) -> type:
 
         if type_.upnp_class == upnp_class:
             return type_
+    return None

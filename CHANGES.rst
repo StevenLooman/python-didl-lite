@@ -1,6 +1,10 @@
 Changes
 =======
 
+1.2.1 (201x-xx-xx)
+
+- Typing fixes (@scop)
+
 1.2.0 (2018-11-03)
 
 - Typing fixes (@scop)
