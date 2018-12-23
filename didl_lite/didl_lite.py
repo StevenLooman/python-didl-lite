@@ -9,7 +9,7 @@
 import re
 
 from typing import Any, Dict  # noqa: F401 pylint: disable=unused-import
-from typing import List, Optional, Tuple, Type
+from typing import cast, List, Optional, Tuple, Type
 from xml.etree import ElementTree as ET
 
 
@@ -922,7 +922,7 @@ def to_xml_string(*objects) -> bytes:
         didl_object_el = didl_object.to_xml()
         root_el.append(didl_object_el)
 
-    return ET.tostring(root_el)
+    return cast(bytes, ET.tostring(root_el))
 
 
 def from_xml_string(xml_string) -> List[DidlObject]:
