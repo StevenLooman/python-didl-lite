@@ -52,12 +52,12 @@ def _namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
     return namespace, tag
 
 
-def _to_camel_case(name):
+def _to_camel_case(name: str) -> str:
     sub1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', sub1).lower()
 
 
-def _didl_property_def_key(didl_property_def):
+def _didl_property_def_key(didl_property_def: Tuple[str, ...]) -> str:
     """Get Python property key for didl_property_def."""
     if didl_property_def[1].startswith('@'):
         return _to_camel_case(didl_property_def[1].replace('@', ''))
@@ -82,7 +82,7 @@ class DidlObject:
         ('upnp', 'writeStatus', 'O'),
     ]
 
-    def __init__(self, id="", parent_id="", descriptors=None, **properties):
+    def __init__(self, id: str = "", parent_id: str = "", descriptors=None, **properties):
         """Initializer."""
         # pylint: disable=invalid-name,redefined-builtin
         properties['id'] = id
@@ -94,14 +94,14 @@ class DidlObject:
         self.resources = properties.get('resources') or []
         self.descriptors = descriptors if descriptors else []
 
-    def _ensure_required_properties(self, **properties):
+    def _ensure_required_properties(self, **properties) -> None:
         """Check if all required properties are given."""
         for property_def in self.didl_properties_defs:
             key = _didl_property_def_key(property_def)
             if property_def[2] == 'R' and key not in properties:
                 raise Exception(key + ' is mandatory')
 
-    def _set_properties(self, **properties):
+    def _set_properties(self, **properties) -> None:
         """Set attributes from properties."""
         # ensure we have default/known slots
         for property_def in self.didl_properties_defs:
@@ -830,7 +830,7 @@ class Resource:
 
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
-    def __init__(self, uri, protocol_info, import_uri=None, size=None, duration=None,
+    def __init__(self, uri, protocol_info: str, import_uri=None, size=None, duration=None,
                  bitrate=None, sample_frequency=None, bits_per_sample=None,
                  nr_audio_channels=None, resolution=None, color_depth=None, protection=None):
         """Initializer."""
@@ -884,7 +884,7 @@ class Resource:
 class Descriptor:
     """DIDL Descriptor."""
 
-    def __init__(self, id, name_space, type=None, text=None):
+    def __init__(self, id: str, name_space, type=None, text=None):
         """Initializer."""
         # pylint: disable=invalid-name,redefined-builtin
         self.id = id
