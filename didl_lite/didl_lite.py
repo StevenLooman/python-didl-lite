@@ -946,6 +946,8 @@ def from_xml_el(xml_el: ET.Element) -> List[DidlObject]:
         if upnp_class is None or not upnp_class.text:
             continue
         didl_object_type = type_by_upnp_class(upnp_class.text)
+        if didl_object_type is None:
+            continue
         didl_object = didl_object_type.from_xml(child_el)
         didl_objects.append(didl_object)
 

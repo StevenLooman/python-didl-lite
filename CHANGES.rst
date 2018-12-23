@@ -4,6 +4,7 @@ Changes
 1.2.1 (201x-xx-xx)
 
 - Typing fixes (@scop)
+- Skip unknown object types on parse (@scop)
 
 1.2.0 (2018-11-03)
 
