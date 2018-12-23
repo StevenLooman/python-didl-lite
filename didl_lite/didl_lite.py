@@ -159,6 +159,7 @@ class DidlObject:
 
     def to_xml(self) -> ET.Element:
         """Convert self to XML Element."""
+        assert self.tag is not None
         item_el = ET.Element(_ns_tag(self.tag))
         elements = {'': item_el}
 
