@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for didl_lite."""
 
-from xml.etree import ElementTree as ET
+from defusedxml import ElementTree as ET  # type: ignore
 
 from didl_lite import didl_lite
 

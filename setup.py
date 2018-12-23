@@ -31,6 +31,11 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     print(DESCRIPTION)
 
 
+INSTALL_REQUIRES = [
+    'defusedxml>=0.5.0',
+]
+
+
 TEST_REQUIRES = [
     'pytest',
     'flake8',
@@ -56,6 +61,7 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     packages=['didl_lite'],
+    install_requires=INSTALL_REQUIRES,
     tests_require=TEST_REQUIRES,
     cmdclass={'test': PyTest},
 )
