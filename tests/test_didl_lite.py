@@ -33,9 +33,9 @@ class TestDidlLite:
         assert len(items) == 1
 
         item = items[0]
-        assert item.title == 'Audio Item Title'
-        assert item.upnp_class == 'object.item.audioItem'
-        assert item.language == 'English'
+        assert getattr(item, 'title') == 'Audio Item Title'
+        assert getattr(item, 'upnp_class') == 'object.item.audioItem'
+        assert getattr(item, 'language') == 'English'
 
         resources = item.resources
         assert len(resources) == 1
@@ -64,12 +64,15 @@ class TestDidlLite:
         assert item_el.attrib['restricted'] == '1'
 
         title_el = item_el.find('./dc:title', NAMESPACES)
+        assert title_el is not None
         assert title_el.text == 'Audio Item Title'
 
         class_el = item_el.find('./upnp:class', NAMESPACES)
+        assert class_el is not None
         assert class_el.text == 'object.item.audioItem'
 
         language_el = item_el.find('./dc:language', NAMESPACES)
+        assert language_el is not None
         assert language_el.text == 'English'
 
         res_el = item_el.find('./didl_lite:res', NAMESPACES)
@@ -99,8 +102,9 @@ class TestDidlLite:
         assert len(items) == 1
 
         container = items[0]
-        assert container.title == 'Album Container Title'
-        assert container.upnp_class == 'object.container.album'
+        assert isinstance(container, didl_lite.Container)
+        assert getattr(container, 'title') == 'Album Container Title'
+        assert getattr(container, 'upnp_class') == 'object.container.album'
 
         item = container[0]
         assert item.title == 'Audio Item Title'
@@ -141,12 +145,15 @@ class TestDidlLite:
         assert item_el.attrib['restricted'] == '1'
 
         title_el = item_el.find('./dc:title', NAMESPACES)
+        assert title_el is not None
         assert title_el.text == 'Audio Item Title'
 
         class_el = item_el.find('./upnp:class', NAMESPACES)
+        assert class_el is not None
         assert class_el.text == 'object.item.audioItem'
 
         language_el = item_el.find('./dc:language', NAMESPACES)
+        assert language_el is not None
         assert language_el.text == 'English'
 
         res_el = item_el.find('./didl_lite:res', NAMESPACES)
@@ -168,10 +175,10 @@ class TestDidlLite:
 
         descriptor = items[0]
         assert descriptor is not None
-        assert descriptor.id == '1'
-        assert descriptor.name_space == 'ns'
-        assert descriptor.type == 'type'
-        assert descriptor.text == 'Text'
+        assert getattr(descriptor, 'id') == '1'
+        assert getattr(descriptor, 'name_space') == 'ns'
+        assert getattr(descriptor, 'type') == 'type'
+        assert getattr(descriptor, 'text') == 'Text'
 
     def test_descriptor_from_xml_item(self):
         didl_string = """
@@ -253,6 +260,7 @@ class TestDidlLite:
 
         container = items[0]
         assert container is not None
+        assert isinstance(container, didl_lite.Container)
 
         item = container[0]
         assert item is not None
@@ -332,8 +340,8 @@ class TestDidlLite:
 
         item = items[0]
         assert item is not None
-        assert item.genre == 'Action'
-        assert item.genre_id == 'genreId'
+        assert getattr(item, 'genre') == 'Action'
+        assert getattr(item, 'genre_id') == 'genreId'
 
     def test_item_property_attribute_to_xml(self):
         item = didl_lite.VideoItem(id='0', parent_id='0',
@@ -383,9 +391,9 @@ class TestDidlLite:
         assert len(items) == 1
 
         item = items[0]
-        assert item.title == 'Video Item Title'
+        assert getattr(item, 'title') == 'Video Item Title'
         assert hasattr(item, 'rating')
-        assert item.rating is None
+        assert getattr(item, 'rating') is None
         assert len(item.resources) == 0
 
     def test_extra_properties(self):
@@ -405,7 +413,7 @@ class TestDidlLite:
 
         item = items[0]
         assert hasattr(item, 'album_art_uri')
-        assert item.album_art_uri == 'extra_property'
+        assert getattr(item, 'album_art_uri') == 'extra_property'
 
     def test_default_properties_set(self):
         item = didl_lite.VideoItem(id='0', parent_id='0',
