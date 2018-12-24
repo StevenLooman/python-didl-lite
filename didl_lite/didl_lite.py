@@ -12,6 +12,8 @@ from typing import Any, Dict  # noqa: F401 pylint: disable=unused-import
 from typing import cast, List, Optional, Tuple, Type
 from xml.etree import ElementTree as ET
 
+import defusedxml.ElementTree  # type: ignore
+
 
 NAMESPACES = {
     'didl_lite': 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/',
@@ -927,7 +929,7 @@ def to_xml_string(*objects) -> bytes:
 
 def from_xml_string(xml_string) -> List[DidlObject]:
     """Convert XML string to DIDL Objects."""
-    xml_el = ET.fromstring(xml_string)
+    xml_el = defusedxml.ElementTree.fromstring(xml_string)
     return from_xml_el(xml_el)
 
 
