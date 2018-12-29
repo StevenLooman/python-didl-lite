@@ -907,8 +907,9 @@ class Descriptor:
         attribs = {
             'id': self.id,
             'nameSpace': self.name_space,
-            'type': self.type,
         }
+        if self.type is not None:
+            attribs['type'] = self.type
         desc_el = ET.Element(_ns_tag('desc'), attribs)
         desc_el.text = self.text
         return desc_el

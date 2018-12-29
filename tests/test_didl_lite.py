@@ -288,10 +288,18 @@ class TestDidlLite:
 
         descriptor_el = item_el.find('./didl_lite:desc', NAMESPACES)
         assert descriptor_el is not None
+        assert len(descriptor_el.attrib) == 3
         assert descriptor_el.attrib['id'] == '1'
         assert descriptor_el.attrib['nameSpace'] == 'ns'
         assert descriptor_el.attrib['type'] == 'type'
         assert descriptor_el.text == 'Text'
+
+        descriptor = didl_lite.Descriptor(id='2', name_space='ns2')
+        descriptor_el = descriptor.to_xml()
+        assert descriptor_el is not None
+        assert len(descriptor_el.attrib) == 2
+        assert descriptor_el.attrib['id'] == '2'
+        assert descriptor_el.attrib['nameSpace'] == 'ns2'
 
     def test_item_order(self):
         didl_string = """
