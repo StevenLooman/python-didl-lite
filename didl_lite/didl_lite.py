@@ -9,7 +9,7 @@
 import re
 
 from typing import Any, Dict  # noqa: F401 pylint: disable=unused-import
-from typing import cast, List, Optional, Tuple, Type
+from typing import cast, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree  # type: ignore
@@ -68,6 +68,11 @@ def _didl_property_def_key(didl_property_def: Tuple[str, ...]) -> str:
 
 
 # region: DidlObjects
+
+
+TDO = TypeVar('TDO', bound='DidlObject')
+
+
 class DidlObject:
     """DIDL Ojbect."""
 
@@ -84,7 +89,8 @@ class DidlObject:
         ('upnp', 'writeStatus', 'O'),
     ]
 
-    def __init__(self, id: str = "", parent_id: str = "", descriptors=None, **properties):
+    def __init__(self, id: str = "", parent_id: str = "",
+                 descriptors: Optional[Sequence['Descriptor']] = None, **properties: Any):
         """Initializer."""
         # pylint: disable=invalid-name,redefined-builtin
         properties['id'] = id
@@ -96,14 +102,14 @@ class DidlObject:
         self.resources = properties.get('resources') or []
         self.descriptors = descriptors if descriptors else []
 
-    def _ensure_required_properties(self, **properties) -> None:
+    def _ensure_required_properties(self, **properties: Any) -> None:
         """Check if all required properties are given."""
         for property_def in self.didl_properties_defs:
             key = _didl_property_def_key(property_def)
             if property_def[2] == 'R' and key not in properties:
                 raise Exception(key + ' is mandatory')
 
-    def _set_properties(self, **properties) -> None:
+    def _set_properties(self, **properties: Any) -> None:
         """Set attributes from properties."""
         # ensure we have default/known slots
         for property_def in self.didl_properties_defs:
@@ -114,7 +120,7 @@ class DidlObject:
             setattr(self, key, value)
 
     @classmethod
-    def from_xml(cls, xml_el: ET.Element):
+    def from_xml(cls: Type[TDO], xml_el: ET.Element) -> TDO:
         """
         Initialize from an XML node.
 
@@ -544,6 +550,9 @@ class VideoProgram(EpgItem):
 
 
 # region: containers
+TC = TypeVar('TC', bound='Container')
+
+
 class Container(DidlObject, list):
     """DIDL Container."""
 
@@ -560,7 +569,7 @@ class Container(DidlObject, list):
     ]
 
     @classmethod
-    def from_xml(cls, xml_el: ET.Element):
+    def from_xml(cls: Type[TC], xml_el: ET.Element) -> TC:
         """
         Initialize from an XML node.
 
@@ -827,14 +836,20 @@ class BookmarkFolder(Container):
 # endregion
 
 
+TR = TypeVar('TR', bound='Resource')
+
+
 class Resource:
     """DIDL Resource."""
 
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
-    def __init__(self, uri, protocol_info: str, import_uri=None, size=None, duration=None,
-                 bitrate=None, sample_frequency=None, bits_per_sample=None,
-                 nr_audio_channels=None, resolution=None, color_depth=None, protection=None):
+    def __init__(self, uri: Optional[str], protocol_info: str, import_uri: Optional[str] = None,
+                 size: Optional[str] = None, duration: Optional[str] = None,
+                 bitrate: Optional[str] = None, sample_frequency: Optional[str] = None,
+                 bits_per_sample: Optional[str] = None, nr_audio_channels: Optional[str] = None,
+                 resolution: Optional[str] = None, color_depth: Optional[str] = None,
+                 protection: Optional[str] = None):
         """Initializer."""
         # pylint: disable=too-many-arguments
         self.uri = uri
@@ -851,7 +866,7 @@ class Resource:
         self.protection = protection
 
     @classmethod
-    def from_xml(cls, xml_node: ET.Element):
+    def from_xml(cls: Type[TR], xml_node: ET.Element) -> TR:
         """Initialize from an XML node."""
         uri = xml_node.text
         protocol_info = xml_node.attrib["protocolInfo"]
@@ -883,10 +898,14 @@ class Resource:
         return res_el
 
 
+TD = TypeVar('TD', bound='Descriptor')
+
+
 class Descriptor:
     """DIDL Descriptor."""
 
-    def __init__(self, id: str, name_space, type=None, text=None):
+    def __init__(self, id: str, name_space: str, type: Optional[str] = None,
+                 text: Optional[str] = None):
         """Initializer."""
         # pylint: disable=invalid-name,redefined-builtin
         self.id = id
@@ -895,7 +914,7 @@ class Descriptor:
         self.text = text
 
     @classmethod
-    def from_xml(cls, xml_node: ET.Element):
+    def from_xml(cls: Type[TD], xml_node: ET.Element) -> TD:
         """Initialize from an XML node."""
         id_ = xml_node.attrib['id']
         name_space = xml_node.attrib['nameSpace']
@@ -916,7 +935,7 @@ class Descriptor:
 # endregion
 
 
-def to_xml_string(*objects) -> bytes:
+def to_xml_string(*objects: DidlObject) -> bytes:
     """Convert items to DIDL-Lite XML string."""
     root_el = ET.Element(_ns_tag('DIDL-Lite'), {})
     root_el.attrib['xmlns'] = NAMESPACES['didl_lite']
@@ -928,15 +947,15 @@ def to_xml_string(*objects) -> bytes:
     return cast(bytes, ET.tostring(root_el))
 
 
-def from_xml_string(xml_string) -> List[DidlObject]:
+def from_xml_string(xml_string: str) -> List[Union[DidlObject, Descriptor]]:
     """Convert XML string to DIDL Objects."""
     xml_el = defusedxml.ElementTree.fromstring(xml_string)
     return from_xml_el(xml_el)
 
 
-def from_xml_el(xml_el: ET.Element) -> List[DidlObject]:
+def from_xml_el(xml_el: ET.Element) -> List[Union[DidlObject, Descriptor]]:
     """Convert XML Element to DIDL Objects."""
-    didl_objects = []
+    didl_objects = []  # type: List[Union[DidlObject, Descriptor]]
 
     # items and containers, in order
     for child_el in xml_el:
