@@ -46,7 +46,7 @@ TEST_REQUIRES = [
 
 setup(
     name='python-didl-lite',
-    version='1.2.1.dev0',
+    version='1.2.1',
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     url='https://github.com/StevenLooman/python-didl-lite',

@@ -1,11 +1,12 @@
 Changes
 =======
 
-1.2.1 (201x-xx-xx)
+1.2.1 (2019-01-20)
 
 - Typing fixes (@scop)
 - Skip unknown object types on parse (@scop)
 - Use defusedxml to parse XML (@scop)
+
 
 1.2.0 (2018-11-03)
 
