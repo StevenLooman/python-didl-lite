@@ -16,7 +16,7 @@ NAMESPACES = {
 
 class TestDidlLite:
 
-    def test_item_from_xml(self):
+    def test_item_from_xml(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -36,6 +36,7 @@ class TestDidlLite:
         assert getattr(item, 'title') == 'Audio Item Title'
         assert getattr(item, 'upnp_class') == 'object.item.audioItem'
         assert getattr(item, 'language') == 'English'
+        assert isinstance(item, didl_lite.AudioItem)
 
         resources = item.resources
         assert len(resources) == 1
@@ -43,7 +44,7 @@ class TestDidlLite:
         assert resource.protocol_info == 'protocol_info'
         assert resource.uri == 'url'
 
-    def test_item_to_xml(self):
+    def test_item_to_xml(self) -> None:
         resource = didl_lite.Resource('url', 'protocol_info')
         items = [
             didl_lite.AudioItem(id='0',
@@ -80,7 +81,7 @@ class TestDidlLite:
         assert res_el.attrib['protocolInfo'] == 'protocol_info'
         assert res_el.text == 'url'
 
-    def test_container_from_xml(self):
+    def test_container_from_xml(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -117,7 +118,7 @@ class TestDidlLite:
         assert resource.protocol_info == 'protocol_info'
         assert resource.uri == 'url'
 
-    def test_container_to_xml(self):
+    def test_container_to_xml(self) -> None:
         container = didl_lite.Album(id='0', parent_id='0',
                                     title='Audio Item Title',
                                     restricted='1')
@@ -161,7 +162,7 @@ class TestDidlLite:
         assert res_el.attrib['protocolInfo'] == 'protocol_info'
         assert res_el.text == 'url'
 
-    def test_descriptor_from_xml_root(self):
+    def test_descriptor_from_xml_root(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -180,7 +181,7 @@ class TestDidlLite:
         assert getattr(descriptor, 'type') == 'type'
         assert getattr(descriptor, 'text') == 'Text'
 
-    def test_descriptor_from_xml_item(self):
+    def test_descriptor_from_xml_item(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -200,6 +201,7 @@ class TestDidlLite:
 
         item = items[0]
         assert item is not None
+        assert isinstance(item, didl_lite.AudioItem)
 
         descriptor = item.descriptors[0]
         assert descriptor is not None
@@ -208,7 +210,7 @@ class TestDidlLite:
         assert descriptor.type == 'type'
         assert descriptor.text == 'Text'
 
-    def test_descriptor_from_xml_container(self):
+    def test_descriptor_from_xml_container(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -227,6 +229,7 @@ class TestDidlLite:
 
         container = items[0]
         assert container is not None
+        assert isinstance(container, didl_lite.Container)
 
         descriptor = container.descriptors[0]
         assert descriptor is not None
@@ -235,7 +238,7 @@ class TestDidlLite:
         assert descriptor.type == 'type'
         assert descriptor.text == 'Text'
 
-    def test_descriptor_from_xml_container_item(self):
+    def test_descriptor_from_xml_container_item(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -272,7 +275,7 @@ class TestDidlLite:
         assert descriptor.type == 'type'
         assert descriptor.text == 'Text'
 
-    def test_descriptor_to_xml(self):
+    def test_descriptor_to_xml(self) -> None:
         descriptor = didl_lite.Descriptor(id='1', name_space='ns',
                                           type='type', text='Text')
         item = didl_lite.AudioItem(id='0', parent_id='0',
@@ -288,12 +291,20 @@ class TestDidlLite:
 
         descriptor_el = item_el.find('./didl_lite:desc', NAMESPACES)
         assert descriptor_el is not None
+        assert len(descriptor_el.attrib) == 3
         assert descriptor_el.attrib['id'] == '1'
         assert descriptor_el.attrib['nameSpace'] == 'ns'
         assert descriptor_el.attrib['type'] == 'type'
         assert descriptor_el.text == 'Text'
 
-    def test_item_order(self):
+        descriptor = didl_lite.Descriptor(id='2', name_space='ns2')
+        descriptor_el = descriptor.to_xml()
+        assert descriptor_el is not None
+        assert len(descriptor_el.attrib) == 2
+        assert descriptor_el.attrib['id'] == '2'
+        assert descriptor_el.attrib['nameSpace'] == 'ns2'
+
+    def test_item_order(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -322,7 +333,7 @@ class TestDidlLite:
         assert isinstance(items[1], didl_lite.Album)
         assert isinstance(items[2], didl_lite.AudioItem)
 
-    def test_item_property_attribute_from_xml(self):
+    def test_item_property_attribute_from_xml(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -343,7 +354,7 @@ class TestDidlLite:
         assert getattr(item, 'genre') == 'Action'
         assert getattr(item, 'genre_id') == 'genreId'
 
-    def test_item_property_attribute_to_xml(self):
+    def test_item_property_attribute_to_xml(self) -> None:
         item = didl_lite.VideoItem(id='0', parent_id='0',
                                    title='Video Item Title',
                                    restricted='1',
@@ -360,7 +371,7 @@ class TestDidlLite:
         assert genre_el.text == 'Action'
         assert genre_el.attrib['id'] == 'genreId'
 
-    def test_item_missing_id(self):
+    def test_item_missing_id(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -375,7 +386,7 @@ class TestDidlLite:
         items = didl_lite.from_xml_string(didl_string)
         assert len(items) == 1
 
-    def test_item_set_attributes(self):
+    def test_item_set_attributes(self) -> None:
         didl_string = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
            xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -394,9 +405,10 @@ class TestDidlLite:
         assert getattr(item, 'title') == 'Video Item Title'
         assert hasattr(item, 'rating')
         assert getattr(item, 'rating') is None
+        assert isinstance(item, didl_lite.VideoItem)
         assert len(item.resources) == 0
 
-    def test_extra_properties(self):
+    def test_extra_properties(self) -> None:
         didl_string = """
         <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
                    xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
@@ -415,7 +427,7 @@ class TestDidlLite:
         assert hasattr(item, 'album_art_uri')
         assert getattr(item, 'album_art_uri') == 'extra_property'
 
-    def test_default_properties_set(self):
+    def test_default_properties_set(self) -> None:
         item = didl_lite.VideoItem(id='0', parent_id='0',
                                    title='Video Item Title',
                                    restricted='1')
