@@ -1,6 +1,9 @@
 Changes
 =======
 
+1.2.2 (unreleased)
+
+
 1.2.1 (2019-01-20)
 
 - Typing fixes (@scop)
