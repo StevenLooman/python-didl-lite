@@ -61,6 +61,9 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     packages=['didl_lite'],
+    package_data={
+        'didl_lite': ['py.typed'],
+    },
     install_requires=INSTALL_REQUIRES,
     tests_require=TEST_REQUIRES,
     cmdclass={'test': PyTest},
