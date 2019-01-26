@@ -213,6 +213,11 @@ class DidlObject:
 
         return item_el
 
+    def __getattr__(self, name: str) -> Any:
+        """Get attribute."""
+        # pylint: disable=useless-super-delegation
+        return getattr(self, name)
+
 
 # region: items
 class Item(DidlObject):
@@ -932,6 +937,11 @@ class Descriptor:
         desc_el = ET.Element(_ns_tag('desc'), attribs)
         desc_el.text = self.text
         return desc_el
+
+    def __getattr__(self, name: str) -> Any:
+        """Get attribute."""
+        # pylint: disable=useless-super-delegation
+        return getattr(self, name)
 # endregion
 
 
