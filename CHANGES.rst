@@ -5,6 +5,7 @@ Changes
 
 - Add `py.typed` to support PEP 561
 - MyPy understands DidlObject/Descriptor have dynamic properties
+- Move utility methods to utils
 
 
 1.2.1 (2019-01-20)

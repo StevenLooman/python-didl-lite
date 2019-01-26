@@ -6,73 +6,26 @@
 #  http://www.upnp.org/schemas/av/didl-lite-v2.xsd
 #  http://xml.coverpages.org/mpeg21-didl.html
 
-import re
-
 from typing import Any, Dict  # noqa: F401 pylint: disable=unused-import
-from typing import cast, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import cast, List, Optional, Sequence, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree  # type: ignore
 
-
-NAMESPACES = {
-    'didl_lite': 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/',
-    'dc': 'http://purl.org/dc/elements/1.1/',
-    'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/',
-    'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-}
-
-
-def _ns_tag(tag: str) -> str:
-    """
-    Expand namespace-alias to url.
-
-    E.g.,
-        _ns_tag('didl_lite:item') -> '{urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/}item'
-    """
-    if ':' not in tag:
-        return tag
-
-    namespace, tag = tag.split(':')
-    namespace_uri = NAMESPACES[namespace]
-    return '{{{0}}}{1}'.format(namespace_uri, tag)
-
-
-def _namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
-    """
-    Extract namespace and tag from namespaced-tag.
-
-    E.g., _namespace_tag('{urn:schemas-upnp-org:metadata-1-0/upnp/}class') ->
-        'urn:schemas-upnp-org:metadata-1-0/upnp/', 'class'
-    """
-    if '}' not in namespaced_tag:
-        return None, namespaced_tag
-
-    idx = namespaced_tag.index('}')
-    namespace = namespaced_tag[1:idx]
-    tag = namespaced_tag[idx + 1:]
-    return namespace, tag
-
-
-def _to_camel_case(name: str) -> str:
-    sub1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', sub1).lower()
-
-
-def _didl_property_def_key(didl_property_def: Tuple[str, ...]) -> str:
-    """Get Python property key for didl_property_def."""
-    if didl_property_def[1].startswith('@'):
-        return _to_camel_case(didl_property_def[1].replace('@', ''))
-
-    return _to_camel_case(didl_property_def[1].replace('@', '_'))
-
-
-# region: DidlObjects
+from .utils import NAMESPACES
+from .utils import didl_property_def_key
+from .utils import namespace_tag
+from .utils import ns_tag
+from .utils import to_camel_case
 
 
 TDO = TypeVar('TDO', bound='DidlObject')
+TC = TypeVar('TC', bound='Container')
+TD = TypeVar('TD', bound='Descriptor')
+TR = TypeVar('TR', bound='Resource')
 
 
+# region: DidlObjects
 class DidlObject:
     """DIDL Ojbect."""
 
@@ -105,7 +58,7 @@ class DidlObject:
     def _ensure_required_properties(self, **properties: Any) -> None:
         """Check if all required properties are given."""
         for property_def in self.didl_properties_defs:
-            key = _didl_property_def_key(property_def)
+            key = didl_property_def_key(property_def)
             if property_def[2] == 'R' and key not in properties:
                 raise Exception(key + ' is mandatory')
 
@@ -113,7 +66,7 @@ class DidlObject:
         """Set attributes from properties."""
         # ensure we have default/known slots
         for property_def in self.didl_properties_defs:
-            key = _didl_property_def_key(property_def)
+            key = didl_property_def_key(property_def)
             setattr(self, key, None)
 
         for key, value in properties.items():
@@ -131,23 +84,23 @@ class DidlObject:
 
         # attributes
         for attr_key, attr_value in xml_el.attrib.items():
-            key = _to_camel_case(attr_key)
+            key = to_camel_case(attr_key)
             properties[key] = attr_value
 
         # child-nodes
         for xml_child_node in xml_el:
-            if xml_child_node.tag == _ns_tag('didl_lite:res'):
+            if xml_child_node.tag == ns_tag('didl_lite:res'):
                 continue
 
-            _, tag = _namespace_tag(xml_child_node.tag)
-            key = _to_camel_case(tag)
+            _, tag = namespace_tag(xml_child_node.tag)
+            key = to_camel_case(tag)
             value = xml_child_node.text
             properties[key] = value
 
             # attributes of child nodes
             parent_key = key
             for attr_key, attr_value in xml_child_node.attrib.items():
-                key = parent_key + '_' + _to_camel_case(attr_key)
+                key = parent_key + '_' + to_camel_case(attr_key)
                 properties[key] = attr_value
 
         # resources
@@ -168,21 +121,21 @@ class DidlObject:
     def to_xml(self) -> ET.Element:
         """Convert self to XML Element."""
         assert self.tag is not None
-        item_el = ET.Element(_ns_tag(self.tag))
+        item_el = ET.Element(ns_tag(self.tag))
         elements = {'': item_el}
 
         # properties
         for property_def in self.didl_properties_defs:
             if '@' in property_def[1]:
                 continue
-            key = _didl_property_def_key(property_def)
+            key = didl_property_def_key(property_def)
 
             if getattr(self, key) is None or \
                key == 'res':  # no resources, handled later on
                 continue
 
             tag = property_def[0] + ':' + property_def[1]
-            property_el = ET.Element(_ns_tag(tag), {})
+            property_el = ET.Element(ns_tag(tag), {})
             property_el.text = getattr(self, key)
             item_el.append(property_el)
             elements[property_def[1]] = property_el
@@ -192,7 +145,7 @@ class DidlObject:
             if '@' not in property_def[1]:
                 continue
 
-            key = _didl_property_def_key(property_def)
+            key = didl_property_def_key(property_def)
             value = getattr(self, key)
             if value is None:
                 continue
@@ -555,9 +508,6 @@ class VideoProgram(EpgItem):
 
 
 # region: containers
-TC = TypeVar('TC', bound='Container')
-
-
 class Container(DidlObject, list):
     """DIDL Container."""
 
@@ -841,9 +791,6 @@ class BookmarkFolder(Container):
 # endregion
 
 
-TR = TypeVar('TR', bound='Resource')
-
-
 class Resource:
     """DIDL Resource."""
 
@@ -898,12 +845,9 @@ class Resource:
         attribs = {
             'protocolInfo': self.protocol_info,
         }
-        res_el = ET.Element(_ns_tag('res'), attribs)
+        res_el = ET.Element(ns_tag('res'), attribs)
         res_el.text = self.uri
         return res_el
-
-
-TD = TypeVar('TD', bound='Descriptor')
 
 
 class Descriptor:
@@ -934,7 +878,7 @@ class Descriptor:
         }
         if self.type is not None:
             attribs['type'] = self.type
-        desc_el = ET.Element(_ns_tag('desc'), attribs)
+        desc_el = ET.Element(ns_tag('desc'), attribs)
         desc_el.text = self.text
         return desc_el
 
@@ -947,7 +891,7 @@ class Descriptor:
 
 def to_xml_string(*objects: DidlObject) -> bytes:
     """Convert items to DIDL-Lite XML string."""
-    root_el = ET.Element(_ns_tag('DIDL-Lite'), {})
+    root_el = ET.Element(ns_tag('DIDL-Lite'), {})
     root_el.attrib['xmlns'] = NAMESPACES['didl_lite']
 
     for didl_object in objects:
@@ -969,8 +913,8 @@ def from_xml_el(xml_el: ET.Element) -> List[Union[DidlObject, Descriptor]]:
 
     # items and containers, in order
     for child_el in xml_el:
-        if child_el.tag != _ns_tag('didl_lite:item') and \
-           child_el.tag != _ns_tag('didl_lite:container'):
+        if child_el.tag != ns_tag('didl_lite:item') and \
+           child_el.tag != ns_tag('didl_lite:container'):
             continue
 
         # construct item
