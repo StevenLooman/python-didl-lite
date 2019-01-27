@@ -168,8 +168,9 @@ class DidlObject:
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute."""
-        # pylint: disable=useless-super-delegation
-        return getattr(self, name)
+        if name not in self.__dict__:
+            raise AttributeError(name)
+        return self.__dict__[name]
 
 
 # region: items
@@ -884,8 +885,9 @@ class Descriptor:
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute."""
-        # pylint: disable=useless-super-delegation
-        return getattr(self, name)
+        if name not in self.__dict__:
+            raise AttributeError(name)
+        return self.__dict__[name]
 # endregion
 
 

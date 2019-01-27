@@ -3,6 +3,8 @@ Changes
 
 1.2.3 (unreleased)
 
+- Fix infinite recursion error in DidlObject.__getattr__/Resource.__getattr__
+
 
 1.2.2 (2019-01-26)
 

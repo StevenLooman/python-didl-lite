@@ -37,12 +37,14 @@ class TestDidlLite:
         assert getattr(item, 'upnp_class') == 'object.item.audioItem'
         assert getattr(item, 'language') == 'English'
         assert isinstance(item, didl_lite.AudioItem)
+        assert not hasattr(item, 'non_existing')
 
         resources = item.resources
         assert len(resources) == 1
         resource = resources[0]
         assert resource.protocol_info == 'protocol_info'
         assert resource.uri == 'url'
+        assert not hasattr(item, 'non_existing')
 
     def test_item_to_xml(self) -> None:
         resource = didl_lite.Resource('url', 'protocol_info')
