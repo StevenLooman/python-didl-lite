@@ -3,6 +3,8 @@ Changes
 
 1.2.4 (unreleased)
 
+- Better namespace naming
+
 
 1.2.3 (2019-01-27)
 

@@ -121,7 +121,7 @@ class DidlObject:
     def to_xml(self) -> ET.Element:
         """Convert self to XML Element."""
         assert self.tag is not None
-        item_el = ET.Element(ns_tag(self.tag))
+        item_el = ET.Element(self.tag)
         elements = {'': item_el}
 
         # properties
@@ -135,7 +135,7 @@ class DidlObject:
                 continue
 
             tag = property_def[0] + ':' + property_def[1]
-            property_el = ET.Element(ns_tag(tag), {})
+            property_el = ET.Element(tag, {})
             property_el.text = getattr(self, key)
             item_el.append(property_el)
             elements[property_def[1]] = property_el
@@ -846,7 +846,7 @@ class Resource:
         attribs = {
             'protocolInfo': self.protocol_info,
         }
-        res_el = ET.Element(ns_tag('res'), attribs)
+        res_el = ET.Element('res', attribs)
         res_el.text = self.uri
         return res_el
 
@@ -879,7 +879,7 @@ class Descriptor:
         }
         if self.type is not None:
             attribs['type'] = self.type
-        desc_el = ET.Element(ns_tag('desc'), attribs)
+        desc_el = ET.Element('desc', attribs)
         desc_el.text = self.text
         return desc_el
 
@@ -893,8 +893,11 @@ class Descriptor:
 
 def to_xml_string(*objects: DidlObject) -> bytes:
     """Convert items to DIDL-Lite XML string."""
-    root_el = ET.Element(ns_tag('DIDL-Lite'), {})
+    root_el = ET.Element('DIDL-Lite', {})
     root_el.attrib['xmlns'] = NAMESPACES['didl_lite']
+    root_el.attrib['xmlns:dc'] = NAMESPACES['dc']
+    root_el.attrib['xmlns:upnp'] = NAMESPACES['upnp']
+    root_el.attrib['xmlns:sec'] = NAMESPACES['sec']
 
     for didl_object in objects:
         didl_object_el = didl_object.to_xml()

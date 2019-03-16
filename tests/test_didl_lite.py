@@ -57,6 +57,13 @@ class TestDidlLite:
                                 language='English'),
         ]
         didl_string = didl_lite.to_xml_string(*items).decode('utf-8')
+
+        assert 'xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"' in didl_string
+        assert 'xmlns:dc="http://purl.org/dc/elements/1.1/"' in didl_string
+        assert 'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"' in didl_string
+        assert 'xmlns:sec="http://www.sec.co.kr/"' in didl_string
+        assert 'xmlns:ns1="urn:schemas-upnp-org:metadata-1-0/upnp/"' not in didl_string
+
         didl_el = ET.fromstring(didl_string)
         assert didl_el is not None
 

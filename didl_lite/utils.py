@@ -7,6 +7,7 @@ from typing import Optional, Tuple
 NAMESPACES = {
     'didl_lite': 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/',
     'dc': 'http://purl.org/dc/elements/1.1/',
+    'sec': 'http://www.sec.co.kr/',
     'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/',
     'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
 }
