@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.2.4 (unreleased)
+1.2.4 (2019-03-20)
 
 - Better namespace naming
 
