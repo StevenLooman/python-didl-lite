@@ -33,6 +33,7 @@ class TestDidlLite:
         assert len(items) == 1
 
         item = items[0]
+        assert item.xml_el is not None
         assert getattr(item, 'title') == 'Audio Item Title'
         assert getattr(item, 'upnp_class') == 'object.item.audioItem'
         assert getattr(item, 'language') == 'English'
@@ -42,6 +43,7 @@ class TestDidlLite:
         resources = item.resources
         assert len(resources) == 1
         resource = resources[0]
+        assert resource.xml_el is not None
         assert resource.protocol_info == 'protocol_info'
         assert resource.uri == 'url'
         assert not hasattr(item, 'non_existing')
@@ -112,11 +114,13 @@ class TestDidlLite:
         assert len(items) == 1
 
         container = items[0]
+        assert container.xml_el is not None
         assert isinstance(container, didl_lite.Container)
         assert getattr(container, 'title') == 'Album Container Title'
         assert getattr(container, 'upnp_class') == 'object.container.album'
 
         item = container[0]
+        assert item.xml_el is not None
         assert item.title == 'Audio Item Title'
         assert item.upnp_class == 'object.item.audioItem'
         assert item.language == 'English'
@@ -124,6 +128,7 @@ class TestDidlLite:
         resources = item.resources
         assert len(resources) == 1
         resource = resources[0]
+        assert resource.xml_el is not None
         assert resource.protocol_info == 'protocol_info'
         assert resource.uri == 'url'
 
@@ -185,6 +190,7 @@ class TestDidlLite:
 
         descriptor = items[0]
         assert descriptor is not None
+        assert descriptor.xml_el is not None
         assert getattr(descriptor, 'id') == '1'
         assert getattr(descriptor, 'name_space') == 'ns'
         assert getattr(descriptor, 'type') == 'type'
@@ -214,6 +220,7 @@ class TestDidlLite:
 
         descriptor = item.descriptors[0]
         assert descriptor is not None
+        assert descriptor.xml_el is not None
         assert descriptor.id == '1'
         assert descriptor.name_space == 'ns'
         assert descriptor.type == 'type'
@@ -238,10 +245,12 @@ class TestDidlLite:
 
         container = items[0]
         assert container is not None
+        assert container.xml_el is not None
         assert isinstance(container, didl_lite.Container)
 
         descriptor = container.descriptors[0]
         assert descriptor is not None
+        assert descriptor.xml_el is not None
         assert descriptor.id == '1'
         assert descriptor.name_space == 'ns'
         assert descriptor.type == 'type'
@@ -279,6 +288,7 @@ class TestDidlLite:
 
         descriptor = item.descriptors[0]
         assert descriptor is not None
+        assert descriptor.xml_el is not None
         assert descriptor.id == '1'
         assert descriptor.name_space == 'ns'
         assert descriptor.type == 'type'

@@ -7,7 +7,7 @@
 #  http://xml.coverpages.org/mpeg21-didl.html
 
 from typing import Any, Dict  # noqa: F401 pylint: disable=unused-import
-from typing import cast, List, Optional, Sequence, Type, TypeVar, Union
+from typing import List, Optional, Sequence, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree  # type: ignore
@@ -43,8 +43,9 @@ class DidlObject:
     ]
 
     def __init__(self, id: str = "", parent_id: str = "",
-                 descriptors: Optional[Sequence['Descriptor']] = None, **properties: Any):
-        """Initializer."""
+                 descriptors: Optional[Sequence['Descriptor']] = None,
+                 xml_el: Optional[ET.Element] = None, **properties: Any):
+        """Initialize."""
         # pylint: disable=invalid-name,redefined-builtin
         properties['id'] = id
         properties['parent_id'] = parent_id
@@ -52,6 +53,7 @@ class DidlObject:
         self._ensure_required_properties(**properties)
         self._set_properties(**properties)
 
+        self.xml_el = xml_el
         self.resources = properties.get('resources') or []
         self.descriptors = descriptors if descriptors else []
 
@@ -116,7 +118,7 @@ class DidlObject:
             descriptor = Descriptor.from_xml(desc_el)
             descriptors.append(descriptor)
 
-        return cls(descriptors=descriptors, **properties)
+        return cls(xml_el=xml_el, descriptors=descriptors, **properties)
 
     def to_xml(self) -> ET.Element:
         """Convert self to XML Element."""
@@ -802,8 +804,8 @@ class Resource:
                  bitrate: Optional[str] = None, sample_frequency: Optional[str] = None,
                  bits_per_sample: Optional[str] = None, nr_audio_channels: Optional[str] = None,
                  resolution: Optional[str] = None, color_depth: Optional[str] = None,
-                 protection: Optional[str] = None):
-        """Initializer."""
+                 protection: Optional[str] = None, xml_el: Optional[ET.Element] = None,):
+        """Initialize."""
         # pylint: disable=too-many-arguments
         self.uri = uri
         self.protocol_info = protocol_info
@@ -817,29 +819,30 @@ class Resource:
         self.resolution = resolution
         self.color_depth = color_depth
         self.protection = protection
+        self.xml_el = xml_el
 
     @classmethod
-    def from_xml(cls: Type[TR], xml_node: ET.Element) -> TR:
+    def from_xml(cls: Type[TR], xml_el: ET.Element) -> TR:
         """Initialize from an XML node."""
-        uri = xml_node.text
-        protocol_info = xml_node.attrib["protocolInfo"]
-        import_uri = xml_node.attrib.get('importUri')
-        size = xml_node.attrib.get('size')
-        duration = xml_node.attrib.get('duration')
-        bitrate = xml_node.attrib.get('bitrate')
-        sample_frequency = xml_node.attrib.get('sampleFrequency')
-        bits_per_sample = xml_node.attrib.get('bitsPerSample')
-        nr_audio_channels = xml_node.attrib.get('nrAudioChannels')
-        resolution = xml_node.attrib.get('resolution')
-        color_depth = xml_node.attrib.get('colorDepth')
-        protection = xml_node.attrib.get('protection')
+        uri = xml_el.text
+        protocol_info = xml_el.attrib["protocolInfo"]
+        import_uri = xml_el.attrib.get('importUri')
+        size = xml_el.attrib.get('size')
+        duration = xml_el.attrib.get('duration')
+        bitrate = xml_el.attrib.get('bitrate')
+        sample_frequency = xml_el.attrib.get('sampleFrequency')
+        bits_per_sample = xml_el.attrib.get('bitsPerSample')
+        nr_audio_channels = xml_el.attrib.get('nrAudioChannels')
+        resolution = xml_el.attrib.get('resolution')
+        color_depth = xml_el.attrib.get('colorDepth')
+        protection = xml_el.attrib.get('protection')
         return cls(uri, protocol_info,
                    import_uri=import_uri, size=size, duration=duration,
                    bitrate=bitrate, sample_frequency=sample_frequency,
                    bits_per_sample=bits_per_sample,
                    nr_audio_channels=nr_audio_channels,
                    resolution=resolution, color_depth=color_depth,
-                   protection=protection)
+                   protection=protection, xml_el=xml_el,)
 
     def to_xml(self) -> ET.Element:
         """Convert self to XML."""
@@ -855,21 +858,23 @@ class Descriptor:
     """DIDL Descriptor."""
 
     def __init__(self, id: str, name_space: str, type: Optional[str] = None,
-                 text: Optional[str] = None):
-        """Initializer."""
-        # pylint: disable=invalid-name,redefined-builtin
+                 text: Optional[str] = None, xml_el: Optional[ET.Element] = None,):
+        """Initialize."""
+        # pylint: disable=invalid-name,redefined-builtin,too-many-arguments
         self.id = id
         self.name_space = name_space
         self.type = type
         self.text = text
+        self.xml_el = xml_el
 
     @classmethod
-    def from_xml(cls: Type[TD], xml_node: ET.Element) -> TD:
+    def from_xml(cls: Type[TD], xml_el: ET.Element) -> TD:
         """Initialize from an XML node."""
-        id_ = xml_node.attrib['id']
-        name_space = xml_node.attrib['nameSpace']
-        type_ = xml_node.attrib.get('type')
-        return cls(id_, name_space, type_, xml_node.text)
+        id_ = xml_el.attrib['id']
+        name_space = xml_el.attrib['nameSpace']
+        type_ = xml_el.attrib.get('type')
+        text = xml_el.text
+        return cls(id_, name_space, type=type_, text=text, xml_el=xml_el)
 
     def to_xml(self) -> ET.Element:
         """Convert self to XML."""
@@ -903,7 +908,7 @@ def to_xml_string(*objects: DidlObject) -> bytes:
         didl_object_el = didl_object.to_xml()
         root_el.append(didl_object_el)
 
-    return cast(bytes, ET.tostring(root_el))
+    return ET.tostring(root_el)
 
 
 def from_xml_string(xml_string: str) -> List[Union[DidlObject, Descriptor]]:
