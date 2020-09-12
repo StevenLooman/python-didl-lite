@@ -27,8 +27,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
-    DESCRIPTION = f.readline()
-    print(DESCRIPTION)
+    DESCRIPTION = f.readline().strip()
 
 
 INSTALL_REQUIRES = [
@@ -49,10 +48,10 @@ setup(
     version='1.2.5.dev0',
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/x-rst',
     url='https://github.com/StevenLooman/python-didl-lite',
     author='Steven Looman',
     author_email='steven.looman@gmail.com',
-    license='http://www.apache.org/licenses/LICENSE-2.0',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
