@@ -3,6 +3,8 @@ Changes
 
 1.2.5 (unreleased)
 
+- Save xml element for addition information
+
 
 1.2.4 (2019-03-20)
 
