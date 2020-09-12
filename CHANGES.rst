@@ -1,6 +1,9 @@
 Changes
 =======
 
+1.2.6 (unreleased)
+
+
 1.2.5 (2020-09-12)
 
 - Save xml element for addition information
