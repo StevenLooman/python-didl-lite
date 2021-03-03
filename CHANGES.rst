@@ -3,6 +3,8 @@ Changes
 
 1.2.6 (unreleased)
 
+- Add non-strict option misbehaving devices
+
 
 1.2.5 (2020-09-12)
 

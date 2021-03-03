@@ -25,9 +25,13 @@ TD = TypeVar('TD', bound='Descriptor')
 TR = TypeVar('TR', bound='Resource')
 
 
+class DidlLiteException(Exception):
+    """DIDL Lite Exception."""
+
+
 # region: DidlObjects
 class DidlObject:
-    """DIDL Ojbect."""
+    """DIDL Object."""
 
     tag = None  # type: Optional[str]
     upnp_class = 'object'
@@ -42,27 +46,32 @@ class DidlObject:
         ('upnp', 'writeStatus', 'O'),
     ]
 
-    def __init__(self, id: str = "", parent_id: str = "",
-                 descriptors: Optional[Sequence['Descriptor']] = None,
-                 xml_el: Optional[ET.Element] = None, **properties: Any):
+    def __init__(
+        self, id: str = "", parent_id: str = "",
+        descriptors: Optional[Sequence['Descriptor']] = None,
+        xml_el: Optional[ET.Element] = None, strict: bool = True,
+        **properties: Any
+    ) -> None:
         """Initialize."""
-        # pylint: disable=invalid-name,redefined-builtin
+        # pylint: disable=invalid-name,redefined-builtin,too-many-arguments
         properties['id'] = id
         properties['parent_id'] = parent_id
         properties['class'] = self.upnp_class
-        self._ensure_required_properties(**properties)
+        self._ensure_required_properties(strict, **properties)
         self._set_properties(**properties)
 
         self.xml_el = xml_el
         self.resources = properties.get('resources') or []
         self.descriptors = descriptors if descriptors else []
 
-    def _ensure_required_properties(self, **properties: Any) -> None:
+    def _ensure_required_properties(self, strict: bool = True, **properties: Any) -> None:
         """Check if all required properties are given."""
         for property_def in self.didl_properties_defs:
             key = didl_property_def_key(property_def)
-            if property_def[2] == 'R' and key not in properties:
-                raise Exception(key + ' is mandatory')
+            if strict and \
+               property_def[2] == 'R' and \
+               key not in properties:
+                raise DidlLiteException(key + ' is mandatory')
 
     def _set_properties(self, **properties: Any) -> None:
         """Set attributes from properties."""
@@ -75,7 +84,7 @@ class DidlObject:
             setattr(self, key, value)
 
     @classmethod
-    def from_xml(cls: Type[TDO], xml_el: ET.Element) -> TDO:
+    def from_xml(cls: Type[TDO], xml_el: ET.Element, strict: bool = True) -> TDO:
         """
         Initialize from an XML node.
 
@@ -118,7 +127,7 @@ class DidlObject:
             descriptor = Descriptor.from_xml(desc_el)
             descriptors.append(descriptor)
 
-        return cls(xml_el=xml_el, descriptors=descriptors, **properties)
+        return cls(xml_el=xml_el, descriptors=descriptors, strict=strict, **properties)
 
     def to_xml(self) -> ET.Element:
         """Convert self to XML Element."""
@@ -527,16 +536,16 @@ class Container(DidlObject, list):
     ]
 
     @classmethod
-    def from_xml(cls: Type[TC], xml_el: ET.Element) -> TC:
+    def from_xml(cls: Type[TC], xml_el: ET.Element, strict: bool = True) -> TC:
         """
         Initialize from an XML node.
 
         I.e., parse XML and return instance.
         """
-        instance = super().from_xml(xml_el)
+        instance = super().from_xml(xml_el, strict)
 
         # add all children
-        didl_objects = from_xml_el(xml_el)
+        didl_objects = from_xml_el(xml_el, strict)
         instance.extend(didl_objects)  # pylint: disable=no-member
 
         return instance
@@ -799,12 +808,14 @@ class Resource:
 
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
-    def __init__(self, uri: Optional[str], protocol_info: str, import_uri: Optional[str] = None,
-                 size: Optional[str] = None, duration: Optional[str] = None,
-                 bitrate: Optional[str] = None, sample_frequency: Optional[str] = None,
-                 bits_per_sample: Optional[str] = None, nr_audio_channels: Optional[str] = None,
-                 resolution: Optional[str] = None, color_depth: Optional[str] = None,
-                 protection: Optional[str] = None, xml_el: Optional[ET.Element] = None,):
+    def __init__(
+        self, uri: Optional[str], protocol_info: Optional[str], import_uri: Optional[str] = None,
+        size: Optional[str] = None, duration: Optional[str] = None,
+        bitrate: Optional[str] = None, sample_frequency: Optional[str] = None,
+        bits_per_sample: Optional[str] = None, nr_audio_channels: Optional[str] = None,
+        resolution: Optional[str] = None, color_depth: Optional[str] = None,
+        protection: Optional[str] = None, xml_el: Optional[ET.Element] = None,
+    ) -> None:
         """Initialize."""
         # pylint: disable=too-many-arguments
         self.uri = uri
@@ -825,7 +836,7 @@ class Resource:
     def from_xml(cls: Type[TR], xml_el: ET.Element) -> TR:
         """Initialize from an XML node."""
         uri = xml_el.text
-        protocol_info = xml_el.attrib["protocolInfo"]
+        protocol_info = xml_el.attrib.get("protocolInfo")
         import_uri = xml_el.attrib.get('importUri')
         size = xml_el.attrib.get('size')
         duration = xml_el.attrib.get('duration')
@@ -836,7 +847,7 @@ class Resource:
         resolution = xml_el.attrib.get('resolution')
         color_depth = xml_el.attrib.get('colorDepth')
         protection = xml_el.attrib.get('protection')
-        return cls(uri, protocol_info,
+        return cls(uri, protocol_info=protocol_info,
                    import_uri=import_uri, size=size, duration=duration,
                    bitrate=bitrate, sample_frequency=sample_frequency,
                    bits_per_sample=bits_per_sample,
@@ -847,7 +858,7 @@ class Resource:
     def to_xml(self) -> ET.Element:
         """Convert self to XML."""
         attribs = {
-            'protocolInfo': self.protocol_info,
+            'protocolInfo': self.protocol_info or '',
         }
         res_el = ET.Element('res', attribs)
         res_el.text = self.uri
@@ -857,8 +868,10 @@ class Resource:
 class Descriptor:
     """DIDL Descriptor."""
 
-    def __init__(self, id: str, name_space: str, type: Optional[str] = None,
-                 text: Optional[str] = None, xml_el: Optional[ET.Element] = None,):
+    def __init__(
+        self, id: str, name_space: str, type: Optional[str] = None,
+        text: Optional[str] = None, xml_el: Optional[ET.Element] = None,
+    ) -> None:
         """Initialize."""
         # pylint: disable=invalid-name,redefined-builtin,too-many-arguments
         self.id = id
@@ -911,13 +924,13 @@ def to_xml_string(*objects: DidlObject) -> bytes:
     return ET.tostring(root_el)
 
 
-def from_xml_string(xml_string: str) -> List[Union[DidlObject, Descriptor]]:
+def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObject, Descriptor]]:
     """Convert XML string to DIDL Objects."""
     xml_el = defusedxml.ElementTree.fromstring(xml_string)
-    return from_xml_el(xml_el)
+    return from_xml_el(xml_el, strict)
 
 
-def from_xml_el(xml_el: ET.Element) -> List[Union[DidlObject, Descriptor]]:
+def from_xml_el(xml_el: ET.Element, strict: bool = True) -> List[Union[DidlObject, Descriptor]]:
     """Convert XML Element to DIDL Objects."""
     didl_objects = []  # type: List[Union[DidlObject, Descriptor]]
 
@@ -934,7 +947,7 @@ def from_xml_el(xml_el: ET.Element) -> List[Union[DidlObject, Descriptor]]:
         didl_object_type = type_by_upnp_class(upnp_class.text)
         if didl_object_type is None:
             continue
-        didl_object = didl_object_type.from_xml(child_el)
+        didl_object = didl_object_type.from_xml(child_el, strict)
         didl_objects.append(didl_object)
 
     # descriptors
