@@ -1,7 +1,10 @@
 Changes
 =======
 
-1.2.6 (unreleased)
+1.2.7 (unreleased)
+
+
+1.2.6 (2021-03-04)
 
 - Add non-strict option misbehaving devices
 
