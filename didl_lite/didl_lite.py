@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
+# pylint: disable=too-many-lines
 
 # Useful links:
 #  http://upnp.org/specs/av/UPnP-av-ContentDirectory-v2-Service.pdf
@@ -9,7 +10,7 @@
 from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
-import defusedxml.ElementTree  # type: ignore
+import defusedxml.ElementTree
 
 from .utils import (
     NAMESPACES,

@@ -1,28 +1,8 @@
 """Setup."""
 
 import os.path
-import sys
 
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
-
-
-class PyTest(TestCommand):
-    """PyTest command."""
-
-    def finalize_options(self):
-        """Finalize options."""
-        TestCommand.finalize_options(self)
-        self.test_args = ["--strict", "--verbose", "--tb=long", "-vv", "tests"]
-        self.test_suite = True
-
-    def run_tests(self):
-        """Run tests."""
-        import pytest
-
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
-
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
@@ -32,15 +12,12 @@ with open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
 
 
 INSTALL_REQUIRES = [
-    "defusedxml>=0.5.0",
+    "defusedxml>=0.6.0",
 ]
 
 
 TEST_REQUIRES = [
-    "pytest",
-    "flake8",
-    "pylint",
-    "pydocstyle",
+    "pytest~=6.1.2",
 ]
 
 
@@ -69,5 +46,4 @@ setup(
     },
     install_requires=INSTALL_REQUIRES,
     tests_require=TEST_REQUIRES,
-    cmdclass={"test": PyTest},
 )
