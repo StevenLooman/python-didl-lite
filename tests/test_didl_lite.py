@@ -49,6 +49,39 @@ class TestDidlLite:
         assert resource.uri == "url"
         assert not hasattr(item, "non_existing")
 
+    def test_item_from_xml_not_strict(self) -> None:
+        """Test item from XML."""
+        didl_string = """
+<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
+           xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+           xmlns:dc="http://purl.org/dc/elements/1.1/"
+           xmlns:sec="http://www.sec.co.kr/">
+    <item id="0" parentID="0" restricted="1">
+        <dc:title>Audio Item Title</dc:title>
+        <upnp:class>object.item.audioItem</upnp:class>
+        <dc:language>English</dc:language>
+        <res>url</res>
+    </item>
+</DIDL-Lite>"""
+        items = didl_lite.from_xml_string(didl_string, strict=False)
+        assert len(items) == 1
+
+        item = items[0]
+        assert item.xml_el is not None
+        assert getattr(item, "title") == "Audio Item Title"
+        assert getattr(item, "upnp_class") == "object.item.audioItem"
+        assert getattr(item, "language") == "English"
+        assert isinstance(item, didl_lite.AudioItem)
+        assert not hasattr(item, "non_existing")
+
+        resources = item.resources
+        assert len(resources) == 1
+        resource = resources[0]
+        assert resource.xml_el is not None
+        assert resource.protocol_info is None  # This is now allowed with strict=False
+        assert resource.uri == "url"
+        assert not hasattr(item, "non_existing")
+
     def test_item_to_xml(self) -> None:
         """Test item to XML."""
         resource = didl_lite.Resource("url", "protocol_info")
