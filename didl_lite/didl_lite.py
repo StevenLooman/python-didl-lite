@@ -187,6 +187,16 @@ class DidlObject:
             raise AttributeError(name)
         return self.__dict__[name]
 
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if key not in ("class", "xml_el")
+        )
+        return f"{class_name}({attr})"
+
 
 # region: items
 class Item(DidlObject):
@@ -566,6 +576,17 @@ class Container(DidlObject, list):
 
         return container_el
 
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if key not in ("class", "xml_el")
+        )
+        children_repr = ", ".join(repr(child) for child in self)
+        return f"{class_name}({attr}, children=[{children_repr}])"
+
 
 class Person(Container):
     """DIDL Person."""
@@ -883,6 +904,16 @@ class Resource:
         res_el.text = self.uri
         return res_el
 
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if val is not None and key != "xml_el"
+        )
+        return f"{class_name}({attr})"
+
 
 class Descriptor:
     """DIDL Descriptor."""
@@ -929,6 +960,16 @@ class Descriptor:
         if name not in self.__dict__:
             raise AttributeError(name)
         return self.__dict__[name]
+
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if val is not None and key != "xml_el"
+        )
+        return f"{class_name}({attr})"
 
 
 # endregion
