@@ -130,6 +130,27 @@ class TestDidlLite:
         assert res_el.attrib["protocolInfo"] == "protocol_info"
         assert res_el.text == "url"
 
+    def test_item_repr(self) -> None:
+        """Test item's repr can convert back to an equivalent item."""
+        # repr method doens't know how package was imported, so only uses class names
+        from didl_lite.didl_lite import AudioItem, Resource
+
+        item = AudioItem(
+            id="0",
+            parent_id="0",
+            title="Audio Item Title",
+            restricted="1",
+            res=[
+                Resource("url", "protocol_info"),
+                Resource("url2", "protocol_info2"),
+            ],
+            language="English",
+        )
+
+        item_repr = repr(item)
+        item_remade = eval(item_repr)
+        assert ET.tostring(item.to_xml()) == ET.tostring(item_remade.to_xml())
+
     def test_container_from_xml(self) -> None:
         """Test container from XML."""
         didl_string = """
@@ -219,6 +240,28 @@ class TestDidlLite:
         assert res_el is not None
         assert res_el.attrib["protocolInfo"] == "protocol_info"
         assert res_el.text == "url"
+
+    def test_container_repr(self) -> None:
+        """Test containers's repr can convert back to an equivalent container."""
+        from didl_lite.didl_lite import Album, AudioItem, Resource
+
+        container = Album(
+            id="0", parent_id="0", title="Audio Item Title", restricted="1"
+        )
+        resource = Resource("url", "protocol_info")
+        item = AudioItem(
+            id="0",
+            parent_id="0",
+            title="Audio Item Title",
+            restricted="1",
+            resources=[resource],
+            language="English",
+        )
+        container.append(item)
+
+        container_repr = repr(container)
+        container_remade = eval(container_repr)
+        assert ET.tostring(container.to_xml()) == ET.tostring(container_remade.to_xml())
 
     def test_descriptor_from_xml_root(self) -> None:
         """Test root descriptor from XML."""
@@ -375,6 +418,18 @@ class TestDidlLite:
         assert len(descriptor_el.attrib) == 2
         assert descriptor_el.attrib["id"] == "2"
         assert descriptor_el.attrib["nameSpace"] == "ns2"
+
+    def test_descriptor_repr(self) -> None:
+        """Test descriptor's repr can convert back to an equivalent descriptorb."""
+        from didl_lite.didl_lite import Descriptor
+
+        descriptor = Descriptor(id="1", name_space="ns", type="type", text="Text")
+
+        descriptor_repr = repr(descriptor)
+        descriptor_remade = eval(descriptor_repr)
+        assert ET.tostring(descriptor.to_xml()) == ET.tostring(
+            descriptor_remade.to_xml()
+        )
 
     def test_item_order(self) -> None:
         """Test item ordering."""
