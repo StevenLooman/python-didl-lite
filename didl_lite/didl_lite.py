@@ -2,7 +2,7 @@
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
-from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree
@@ -550,6 +550,21 @@ class Container(DidlObject, list):
         ("didl_lite", "@searchable", "O"),
         ("didl_lite", "@neverPlayable", "O"),
     ]
+
+    def __init__(
+        self,
+        id: str = "",
+        parent_id: str = "",
+        descriptors: Optional[Sequence["Descriptor"]] = None,
+        xml_el: Optional[ET.Element] = None,
+        strict: bool = True,
+        children: Iterable[DidlObject] = (),
+        **properties: Any,
+    ) -> None:
+        """Initialize."""
+        # pylint: disable=redefined-builtin,too-many-arguments
+        super().__init__(id, parent_id, descriptors, xml_el, strict, **properties)
+        self.extend(children)
 
     @classmethod
     def from_xml(cls: Type[TC], xml_el: ET.Element, strict: bool = True) -> TC:
