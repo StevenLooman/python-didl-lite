@@ -2,11 +2,6 @@
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
-# Useful links:
-#  http://upnp.org/specs/av/UPnP-av-ContentDirectory-v2-Service.pdf
-#  http://www.upnp.org/schemas/av/didl-lite-v2.xsd
-#  http://xml.coverpages.org/mpeg21-didl.html
-
 from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
