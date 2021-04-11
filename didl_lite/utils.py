@@ -12,7 +12,7 @@ NAMESPACES = {
 }
 
 
-def ns_tag(tag: str) -> str:
+def expand_namespace_tag(tag: str) -> str:
     """
     Expand namespace-alias to url.
 
@@ -27,7 +27,7 @@ def ns_tag(tag: str) -> str:
     return "{{{0}}}{1}".format(namespace_uri, tag)
 
 
-def namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
+def split_namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
     """
     Extract namespace and tag from namespaced-tag.
 

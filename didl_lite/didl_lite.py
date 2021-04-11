@@ -10,8 +10,8 @@ import defusedxml.ElementTree
 from .utils import (
     NAMESPACES,
     didl_property_def_key,
-    namespace_tag,
-    ns_tag,
+    expand_namespace_tag,
+    split_namespace_tag,
     to_camel_case,
 )
 
@@ -101,10 +101,10 @@ class DidlObject:
 
         # child-nodes
         for xml_child_node in xml_el:
-            if xml_child_node.tag == ns_tag("didl_lite:res"):
+            if xml_child_node.tag == expand_namespace_tag("didl_lite:res"):
                 continue
 
-            _, tag = namespace_tag(xml_child_node.tag)
+            _, tag = split_namespace_tag(xml_child_node.tag)
             key = to_camel_case(tag)
             value = xml_child_node.text
             properties[key] = value
@@ -965,9 +965,9 @@ def from_xml_el(
 
     # items and containers, in order
     for child_el in xml_el:
-        if child_el.tag != ns_tag("didl_lite:item") and child_el.tag != ns_tag(
-            "didl_lite:container"
-        ):
+        if child_el.tag != expand_namespace_tag(
+            "didl_lite:item"
+        ) and child_el.tag != expand_namespace_tag("didl_lite:container"):
             continue
 
         # construct item
