@@ -6,6 +6,7 @@ Changes
 - `DidlObject.resources` is now deprecated, use `DidlObject.res` instead
 - Rename `utils.ns_tag` to `utils.expand_namespace_tag`
 - Rename `utils.namespace_tag` to `utils.split_namespace_tag`
+- Add `__repr__` methods to DIDL classes for easier debugging
 
 
 1.2.6 (2021-03-04)
