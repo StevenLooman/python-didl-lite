@@ -2,7 +2,7 @@
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
-from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, TypeVar, Union
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree
@@ -186,6 +186,16 @@ class DidlObject:
         if name not in self.__dict__:
             raise AttributeError(name)
         return self.__dict__[name]
+
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if key not in ("class", "xml_el")
+        )
+        return f"{class_name}({attr})"
 
 
 # region: items
@@ -541,6 +551,21 @@ class Container(DidlObject, list):
         ("didl_lite", "@neverPlayable", "O"),
     ]
 
+    def __init__(
+        self,
+        id: str = "",
+        parent_id: str = "",
+        descriptors: Optional[Sequence["Descriptor"]] = None,
+        xml_el: Optional[ET.Element] = None,
+        strict: bool = True,
+        children: Iterable[DidlObject] = (),
+        **properties: Any,
+    ) -> None:
+        """Initialize."""
+        # pylint: disable=redefined-builtin,too-many-arguments
+        super().__init__(id, parent_id, descriptors, xml_el, strict, **properties)
+        self.extend(children)
+
     @classmethod
     def from_xml(cls: Type[TC], xml_el: ET.Element, strict: bool = True) -> TC:
         """
@@ -565,6 +590,17 @@ class Container(DidlObject, list):
             container_el.append(didl_object_el)
 
         return container_el
+
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if key not in ("class", "xml_el")
+        )
+        children_repr = ", ".join(repr(child) for child in self)
+        return f"{class_name}({attr}, children=[{children_repr}])"
 
 
 class Person(Container):
@@ -883,6 +919,16 @@ class Resource:
         res_el.text = self.uri
         return res_el
 
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if val is not None and key != "xml_el"
+        )
+        return f"{class_name}({attr})"
+
 
 class Descriptor:
     """DIDL Descriptor."""
@@ -929,6 +975,16 @@ class Descriptor:
         if name not in self.__dict__:
             raise AttributeError(name)
         return self.__dict__[name]
+
+    def __repr__(self) -> str:
+        """Evaluatable string representation of this object."""
+        class_name = type(self).__name__
+        attr = ", ".join(
+            f"{key}={val!r}"
+            for key, val in self.__dict__.items()
+            if val is not None and key != "xml_el"
+        )
+        return f"{class_name}({attr})"
 
 
 # endregion
