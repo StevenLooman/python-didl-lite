@@ -44,7 +44,7 @@ def namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
 
 
 def to_camel_case(name: str) -> str:
-    """Get came case of name."""
+    """Get camel case of name."""
     sub1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", sub1).lower()
 

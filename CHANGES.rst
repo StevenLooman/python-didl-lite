@@ -3,6 +3,8 @@ Changes
 
 1.2.7 (unreleased)
 
+- `DidlObject.resources` is now deprecated, use `DidlObject.res` instead
+
 
 1.2.6 (2021-03-04)
 

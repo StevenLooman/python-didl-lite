@@ -41,13 +41,14 @@ class TestDidlLite:
         assert isinstance(item, didl_lite.AudioItem)
         assert not hasattr(item, "non_existing")
 
-        resources = item.resources
+        resources = item.res
         assert len(resources) == 1
         resource = resources[0]
         assert resource.xml_el is not None
         assert resource.protocol_info == "protocol_info"
         assert resource.uri == "url"
         assert not hasattr(item, "non_existing")
+        assert item.res == item.resources
 
     def test_item_from_xml_not_strict(self) -> None:
         """Test item from XML."""
@@ -74,13 +75,14 @@ class TestDidlLite:
         assert isinstance(item, didl_lite.AudioItem)
         assert not hasattr(item, "non_existing")
 
-        resources = item.resources
+        resources = item.res
         assert len(resources) == 1
         resource = resources[0]
         assert resource.xml_el is not None
         assert resource.protocol_info is None  # This is now allowed with strict=False
         assert resource.uri == "url"
         assert not hasattr(item, "non_existing")
+        assert item.res == item.resources
 
     def test_item_to_xml(self) -> None:
         """Test item to XML."""
@@ -162,12 +164,13 @@ class TestDidlLite:
         assert item.upnp_class == "object.item.audioItem"
         assert item.language == "English"
 
-        resources = item.resources
+        resources = item.res
         assert len(resources) == 1
         resource = resources[0]
         assert resource.xml_el is not None
         assert resource.protocol_info == "protocol_info"
         assert resource.uri == "url"
+        assert item.res == item.resources
 
     def test_container_to_xml(self) -> None:
         """Test container to XML."""
@@ -483,7 +486,8 @@ class TestDidlLite:
         assert hasattr(item, "rating")
         assert getattr(item, "rating") is None
         assert isinstance(item, didl_lite.VideoItem)
-        assert len(item.resources) == 0
+        assert len(item.res) == 0
+        assert item.res == item.resources
 
     def test_extra_properties(self) -> None:
         """Test extra item properties from XML."""

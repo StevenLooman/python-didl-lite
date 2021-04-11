@@ -56,11 +56,13 @@ class DidlObject:
         properties["id"] = id
         properties["parent_id"] = parent_id
         properties["class"] = self.upnp_class
+        properties["res"] = properties.get("res") or properties.get("resources") or []
+        if "resources" in properties:
+            del properties["resources"]
         self._ensure_required_properties(strict, **properties)
         self._set_properties(**properties)
 
         self.xml_el = xml_el
-        self.resources = properties.get("resources") or []
         self.descriptors = descriptors if descriptors else []
 
     def _ensure_required_properties(
@@ -118,7 +120,7 @@ class DidlObject:
         for res_el in xml_el.findall("./didl_lite:res", NAMESPACES):
             resource = Resource.from_xml(res_el)
             resources.append(resource)
-        properties["resources"] = resources
+        properties["res"] = properties["resources"] = resources
 
         # descriptors
         descriptors = []
@@ -179,6 +181,8 @@ class DidlObject:
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute."""
+        if name == "resources":
+            return getattr(self, "res")
         if name not in self.__dict__:
             raise AttributeError(name)
         return self.__dict__[name]
