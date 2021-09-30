@@ -28,6 +28,7 @@ class TestDidlLite:
         <upnp:class>object.item.audioItem</upnp:class>
         <dc:language>English</dc:language>
         <res protocolInfo="protocol_info">url</res>
+        <upnp:longDescription>Long description</upnp:longDescription>
     </item>
 </DIDL-Lite>"""
         items = didl_lite.from_xml_string(didl_string)
@@ -38,6 +39,8 @@ class TestDidlLite:
         assert getattr(item, "title") == "Audio Item Title"
         assert getattr(item, "upnp_class") == "object.item.audioItem"
         assert getattr(item, "language") == "English"
+        assert getattr(item, "longDescription") == "Long description"
+        assert getattr(item, "long_description") == "Long description"
         assert isinstance(item, didl_lite.AudioItem)
         assert not hasattr(item, "non_existing")
 
@@ -95,6 +98,7 @@ class TestDidlLite:
                 restricted="1",
                 resources=[resource],
                 language="English",
+                longDescription="Long description",
             ),
         ]
         didl_string = didl_lite.to_xml_string(*items).decode("utf-8")
@@ -124,6 +128,10 @@ class TestDidlLite:
         language_el = item_el.find("./dc:language", NAMESPACES)
         assert language_el is not None
         assert language_el.text == "English"
+
+        long_description_el = item_el.find("./upnp:longDescription", NAMESPACES)
+        assert long_description_el is not None
+        assert long_description_el.text == "Long description"
 
         res_el = item_el.find("./didl_lite:res", NAMESPACES)
         assert res_el is not None
@@ -563,6 +571,7 @@ class TestDidlLite:
         item = items[0]
         assert hasattr(item, "album_art_uri")
         assert getattr(item, "album_art_uri") == "extra_property"
+        assert getattr(item, "albumArtURI") == "extra_property"
 
     def test_default_properties_set(self) -> None:
         """Test defaults for item properties."""
@@ -570,3 +579,45 @@ class TestDidlLite:
             id="0", parent_id="0", title="Video Item Title", restricted="1"
         )
         assert hasattr(item, "genre_type")  # property is set
+
+    def test_property_case(self) -> None:
+        """Test item properties can be accessed using snake_case or camelCase."""
+        item = didl_lite.MusicTrack(
+            id="0",
+            parent_id="0",
+            title="Audio Item Title",
+            restricted="1",
+            language="English",
+            originalTrackNumber="1",
+            storage_medium="HDD",
+        )
+        assert hasattr(item, "original_track_number")
+        assert hasattr(item, "originalTrackNumber")
+        assert item.original_track_number is item.originalTrackNumber
+        assert item.original_track_number == "1"
+
+        assert hasattr(item, "storage_medium")
+        assert hasattr(item, "storageMedium")
+        assert item.storage_medium is item.storageMedium
+        assert item.storage_medium == "HDD"
+
+        assert hasattr(item, "long_description")
+        assert hasattr(item, "longDescription")
+        assert item.long_description is item.longDescription
+        assert item.long_description is None
+
+        assert not hasattr(item, "otherItem")
+        assert not hasattr(item, "other_item")
+
+        item.storageMedium = "CD"
+        assert item.storage_medium is item.storageMedium
+        assert item.storage_medium == "CD"
+
+        item.long_description = "Long description"
+        assert item.long_description is item.longDescription
+        assert item.long_description == "Long description"
+
+        item.otherItem = "otherItem"
+        assert hasattr(item, "otherItem")
+        assert not hasattr(item, "other_item")
+        assert item.otherItem == "otherItem"

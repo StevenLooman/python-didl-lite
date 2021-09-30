@@ -2,7 +2,18 @@
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree
@@ -10,6 +21,7 @@ import defusedxml.ElementTree
 from .utils import (
     NAMESPACES,
     didl_property_def_key,
+    didl_property_key,
     expand_namespace_tag,
     split_namespace_tag,
     to_camel_case,
@@ -49,7 +61,7 @@ class DidlObject:
         descriptors: Optional[Sequence["Descriptor"]] = None,
         xml_el: Optional[ET.Element] = None,
         strict: bool = True,
-        **properties: Any
+        **properties: Any,
     ) -> None:
         """Initialize."""
         # pylint: disable=invalid-name,redefined-builtin,too-many-arguments
@@ -59,28 +71,38 @@ class DidlObject:
         properties["res"] = properties.get("res") or properties.get("resources") or []
         if "resources" in properties:
             del properties["resources"]
-        self._ensure_required_properties(strict, **properties)
-        self._set_properties(**properties)
+        self._ensure_required_properties(strict, properties)
+        self._set_property_defaults()
+        self._set_properties(properties)
 
         self.xml_el = xml_el
         self.descriptors = descriptors if descriptors else []
 
+    def _clean_property_names(self, properties: Dict[str, Any]) -> Dict[str, Any]:
+        """Turn all property names into lower_camel_case."""
+
     def _ensure_required_properties(
-        self, strict: bool = True, **properties: Any
+        self, strict: bool, properties: Mapping[str, Any]
     ) -> None:
         """Check if all required properties are given."""
+        if not strict:
+            return
+
+        python_property_keys = {didl_property_key(key) for key in properties}
+
         for property_def in self.didl_properties_defs:
             key = didl_property_def_key(property_def)
-            if strict and property_def[2] == "R" and key not in properties:
+            if property_def[2] == "R" and key not in python_property_keys:
                 raise DidlLiteException(key + " is mandatory")
 
-    def _set_properties(self, **properties: Any) -> None:
-        """Set attributes from properties."""
-        # ensure we have default/known slots
+    def _set_property_defaults(self) -> None:
+        """Ensure we have default/known slots, and set them all to None."""
         for property_def in self.didl_properties_defs:
             key = didl_property_def_key(property_def)
             setattr(self, key, None)
 
+    def _set_properties(self, properties: Mapping[str, Any]) -> None:
+        """Set attributes from properties."""
         for key, value in properties.items():
             setattr(self, key, value)
 
@@ -180,12 +202,25 @@ class DidlObject:
         return item_el
 
     def __getattr__(self, name: str) -> Any:
-        """Get attribute."""
+        """Get attribute, modifying case as needed."""
         if name == "resources":
             return getattr(self, "res")
-        if name not in self.__dict__:
+        if name in self.__dict__:
+            return self.__dict__[name]
+        cleaned_name = didl_property_key(name)
+        if cleaned_name not in self.__dict__:
             raise AttributeError(name)
-        return self.__dict__[name]
+        return self.__dict__[cleaned_name]
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set attribute, modifying case as needed."""
+        if name not in self.__dict__:
+            # Redirect to the lower_camel_case version if it's already set,
+            # which is the case for all defined didl properties.
+            cleaned_name = didl_property_key(name)
+            if cleaned_name in self.__dict__:
+                name = cleaned_name
+        self.__dict__[name] = value
 
     def __repr__(self) -> str:
         """Evaluatable string representation of this object."""
