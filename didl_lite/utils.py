@@ -49,6 +49,18 @@ def to_camel_case(name: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", sub1).lower()
 
 
+def didl_property_key(didl_property_name: str) -> str:
+    """Get Python property key for a DIDL property name."""
+    if ":" in didl_property_name:
+        # Remove the namespace from the property name
+        didl_property_name = didl_property_name.partition(":")[2]
+
+    if didl_property_name.startswith("@"):
+        return to_camel_case(didl_property_name.replace("@", ""))
+
+    return to_camel_case(didl_property_name.replace("@", "_"))
+
+
 def didl_property_def_key(didl_property_def: Tuple[str, ...]) -> str:
     """Get Python property key for didl_property_def."""
     if didl_property_def[1].startswith("@"):
