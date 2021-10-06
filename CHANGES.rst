@@ -7,6 +7,7 @@ Changes
 - Rename `utils.ns_tag` to `utils.expand_namespace_tag`
 - Rename `utils.namespace_tag` to `utils.split_namespace_tag`
 - Add `__repr__` methods to DIDL classes for easier debugging
+- Allow camelCase to get and set DIDL object properties (@chishm)
 
 
 1.2.6 (2021-03-04)
