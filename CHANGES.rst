@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.2.7 (unreleased)
+1.3.0 (2021-10-07)
 
 - `DidlObject.resources` is now deprecated, use `DidlObject.res` instead
 - Rename `utils.ns_tag` to `utils.expand_namespace_tag`
