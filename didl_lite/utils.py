@@ -24,7 +24,7 @@ def expand_namespace_tag(tag: str) -> str:
 
     namespace, tag = tag.split(":")
     namespace_uri = NAMESPACES[namespace]
-    return "{{{0}}}{1}".format(namespace_uri, tag)
+    return f"{{{namespace_uri}}}{tag}"
 
 
 def split_namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:

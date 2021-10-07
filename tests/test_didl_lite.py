@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for didl_lite."""
 
-from defusedxml import ElementTree as ET  # type: ignore
+from defusedxml import ElementTree as ET
 
 from didl_lite import didl_lite
 
@@ -15,6 +15,8 @@ NAMESPACES = {
 
 class TestDidlLite:
     """Tests for didl_lite."""
+
+    # pylint: disable=no-self-use, too-many-public-methods
 
     def test_item_from_xml(self) -> None:
         """Test item from XML."""
@@ -140,7 +142,8 @@ class TestDidlLite:
 
     def test_item_repr(self) -> None:
         """Test item's repr can convert back to an equivalent item."""
-        # repr method doens't know how package was imported, so only uses class names
+        # pylint: disable=import-outside-toplevel
+        # repr method doesn't know how package was imported, so only uses class names
         from didl_lite.didl_lite import AudioItem, Resource
 
         item = AudioItem(
@@ -156,7 +159,7 @@ class TestDidlLite:
         )
 
         item_repr = repr(item)
-        item_remade = eval(item_repr)
+        item_remade = eval(item_repr)  # pylint: disable=eval-used
         assert ET.tostring(item.to_xml()) == ET.tostring(item_remade.to_xml())
 
     def test_container_from_xml(self) -> None:
@@ -251,6 +254,7 @@ class TestDidlLite:
 
     def test_container_repr(self) -> None:
         """Test containers's repr can convert back to an equivalent container."""
+        # pylint: disable=import-outside-toplevel
         from didl_lite.didl_lite import Album, AudioItem, Resource
 
         container = Album(
@@ -268,7 +272,7 @@ class TestDidlLite:
         container.append(item)
 
         container_repr = repr(container)
-        container_remade = eval(container_repr)
+        container_remade = eval(container_repr)  # pylint: disable=eval-used
         assert ET.tostring(container.to_xml()) == ET.tostring(container_remade.to_xml())
 
     def test_descriptor_from_xml_root(self) -> None:
@@ -429,12 +433,13 @@ class TestDidlLite:
 
     def test_descriptor_repr(self) -> None:
         """Test descriptor's repr can convert back to an equivalent descriptorb."""
+        # pylint: disable=import-outside-toplevel
         from didl_lite.didl_lite import Descriptor
 
         descriptor = Descriptor(id="1", name_space="ns", type="type", text="Text")
 
         descriptor_repr = repr(descriptor)
-        descriptor_remade = eval(descriptor_repr)
+        descriptor_remade = eval(descriptor_repr)  # pylint: disable=eval-used
         assert ET.tostring(descriptor.to_xml()) == ET.tostring(
             descriptor_remade.to_xml()
         )
