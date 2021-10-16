@@ -384,7 +384,8 @@ class Movie(VideoItem):
         ("upnp", "programTitle", "O"),
         ("upnp", "seriesTitle", "O"),
         ("upnp", "episodeCount", "O"),
-        ("upnp", "episodeNr", "O"),
+        ("upnp", "episodeNumber", "O"),
+        ("upnp", "episodeSeason", "O"),
     ]
 
 
