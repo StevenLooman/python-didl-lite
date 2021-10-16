@@ -384,7 +384,8 @@ class Movie(VideoItem):
         ("upnp", "programTitle", "O"),
         ("upnp", "seriesTitle", "O"),
         ("upnp", "episodeCount", "O"),
-        ("upnp", "episodeNr", "O"),
+        ("upnp", "episodeNumber", "O"),
+        ("upnp", "episodeSeason", "O"),
     ]
 
 
@@ -503,13 +504,20 @@ class EpgItem(Item):
         ("upnp", "seriesID@type", "O"),
         ("upnp", "channelID", "O"),
         ("upnp", "channelID@type", "O"),
+        ("upnp", "channelID@distriNetworkName", "O"),
+        ("upnp", "channelID@distriNetworkID", "O"),
+        ("upnp", "episodeType", "O"),
         ("upnp", "episodeCount", "O"),
         ("upnp", "episodeNumber", "O"),
+        ("upnp", "episodeSeason", "O"),
         ("upnp", "programCode", "O"),
-        ("upnp", "programCode_type", "O"),
+        ("upnp", "programCode@type", "O"),
         ("upnp", "rating", "O"),
         ("upnp", "rating@type", "O"),
-        ("upnp", "episodeType", "O"),
+        ("upnp", "rating@advice", "O"),
+        ("upnp", "rating@equivalentAge", "O"),
+        ("upnp", "recommendationID", "O"),
+        ("upnp", "recommendationID@type", "O"),
         ("upnp", "genre", "O"),
         ("upnp", "genre@id", "O"),
         ("upnp", "genre@extended", "O"),
@@ -523,6 +531,7 @@ class EpgItem(Item):
         ("upnp", "director", "O"),
         ("dc", "publisher", "O"),
         ("dc", "contributor", "O"),
+        ("upnp", "callSign", "O"),
         ("upnp", "networkAffiliation", "O"),
         # ('upnp', 'serviceProvider', 'O'),  # duplicate in standard
         ("upnp", "price", "O"),
@@ -533,11 +542,13 @@ class EpgItem(Item):
         ("upnp", "longDescription", "O"),
         ("upnp", "icon", "O"),
         ("upnp", "region", "O"),
+        ("upnp", "rights", "O"),
         ("dc", "language", "O"),
         ("dc", "relation", "O"),
         ("upnp", "scheduledStartTime", "O"),
         ("upnp", "scheduledEndTime", "O"),
         ("upnp", "recordable", "O"),
+        ("upnp", "foreignMetadata", "O"),
     ]
 
 
