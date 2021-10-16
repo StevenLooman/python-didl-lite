@@ -3,6 +3,8 @@ Changes
 
 1.3.1 (unreleased)
 
+- Class properties from ContentDirectory:4 (@chishm)
+
 
 1.3.0 (2021-10-07)
 
