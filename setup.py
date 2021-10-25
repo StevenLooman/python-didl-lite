@@ -23,7 +23,7 @@ TEST_REQUIRES = [
 
 setup(
     name="python-didl-lite",
-    version="1.3.1.dev0",
+    version="1.3.1",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/x-rst",
