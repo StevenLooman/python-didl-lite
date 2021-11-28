@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -41,9 +42,9 @@ class DidlLiteException(Exception):
 class DidlObject:
     """DIDL Object."""
 
-    tag = None  # type: Optional[str]
-    upnp_class = "object"
-    didl_properties_defs = [
+    tag: Optional[str] = None
+    upnp_class: str = "object"
+    didl_properties_defs: List[Tuple[str, str, str]] = [
         ("didl_lite", "@id", "R"),
         ("didl_lite", "@parentID", "R"),
         ("didl_lite", "@restricted", "R"),
@@ -53,6 +54,12 @@ class DidlObject:
         ("didl_lite", "res", "O"),
         ("upnp", "writeStatus", "O"),
     ]
+
+    id: str
+    parent_id: str
+    res: List["Resource"]
+    xml_el: Optional[ET.Element]
+    descriptors: Sequence["Descriptor"]
 
     def __init__(
         self,
