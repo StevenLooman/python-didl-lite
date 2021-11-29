@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.3.2 (unreleased)
+1.3.2 (2021-11-29)
 
 - Annotate DidlObject properties that mypy doesn't see in __init__ (@chishm)
 
