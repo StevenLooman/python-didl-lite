@@ -16,7 +16,7 @@ Resources / documents
 
 DIDL-Lite resources and documents:
 
-* [UPnP-av-ContentDirectory-v1-Service](http://upnp.org/specs/av/UPnP-av-ContentDirectory-v1-Service.pdf)
-* [UPnP-av-ContentDirectory-v2-Service](http://upnp.org/specs/av/UPnP-av-ContentDirectory-v2-Service.pdf)
-* [didl-lite-v2.xsd](http://www.upnp.org/schemas/av/didl-lite-v2.xsd)
-* [mpeg21-didl](http://xml.coverpages.org/mpeg21-didl.html)
+* `UPnP-av-ContentDirectory-v1-Service <http://upnp.org/specs/av/UPnP-av-ContentDirectory-v1-Service.pdf>`_
+* `UPnP-av-ContentDirectory-v2-Service <http://upnp.org/specs/av/UPnP-av-ContentDirectory-v2-Service.pdf>`_
+* `didl-lite-v2.xsd <http://www.upnp.org/schemas/av/didl-lite-v2.xsd>`_
+* `mpeg21-didl <http://xml.coverpages.org/mpeg21-didl.html>`_
