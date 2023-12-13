@@ -85,9 +85,6 @@ class DidlObject:
         self.xml_el = xml_el
         self.descriptors = descriptors if descriptors else []
 
-    def _clean_property_names(self, properties: Dict[str, Any]) -> Dict[str, Any]:
-        """Turn all property names into lower_camel_case."""
-
     def _ensure_required_properties(
         self, strict: bool, properties: Mapping[str, Any]
     ) -> None:
