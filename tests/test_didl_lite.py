@@ -55,6 +55,30 @@ class TestDidlLite:
         assert not hasattr(item, "non_existing")
         assert item.res == item.resources
 
+    def test_item_bad_class(self) -> None:
+        """Test item from XML that has a badly-cased upnp:class."""
+        didl_string = """
+<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
+           xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+           xmlns:dc="http://purl.org/dc/elements/1.1/"
+           xmlns:sec="http://www.sec.co.kr/">
+    <item id="0" parentID="0" restricted="1">
+        <dc:title>Audio Item Title</dc:title>
+        <upnp:class>Object.Item.AudioItem</upnp:class>
+        <dc:language>English</dc:language>
+        <res protocolInfo="protocol_info">url</res>
+        <upnp:longDescription>Long description</upnp:longDescription>
+    </item>
+</DIDL-Lite>"""
+        items = didl_lite.from_xml_string(didl_string)
+        assert items == []  # Bad class should not be found, returning nothing
+
+        items = didl_lite.from_xml_string(didl_string, strict=False)
+        assert len(items) == 1
+
+        item = items[0]
+        assert isinstance(item, didl_lite.AudioItem)
+
     def test_item_from_xml_not_strict(self) -> None:
         """Test item from XML."""
         didl_string = """

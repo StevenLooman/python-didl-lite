@@ -42,6 +42,7 @@ class DidlLiteException(Exception):
 
 # upnp_class to python type mapping
 _upnp_class_map: Dict[str, Type["DidlObject"]] = {}
+_upnp_class_map_lowercase: Dict[str, Type["DidlObject"]] = {}
 
 
 class DidlObject:
@@ -71,7 +72,9 @@ class DidlObject:
         """Create mapping of upnp_class to Python type for fast lookup."""
         super().__init_subclass__(**kwargs)
         assert cls.upnp_class not in _upnp_class_map
+        assert cls.upnp_class.lower() not in _upnp_class_map_lowercase
         _upnp_class_map[cls.upnp_class] = cls
+        _upnp_class_map_lowercase[cls.upnp_class.lower()] = cls
 
     def __init__(
         self,
@@ -1092,7 +1095,7 @@ def from_xml_el(
         upnp_class = child_el.find("./upnp:class", NAMESPACES)
         if upnp_class is None or not upnp_class.text:
             continue
-        didl_object_type = type_by_upnp_class(upnp_class.text)
+        didl_object_type = type_by_upnp_class(upnp_class.text, strict)
         if didl_object_type is None:
             continue
         didl_object = didl_object_type.from_xml(child_el, strict)
@@ -1107,6 +1110,14 @@ def from_xml_el(
 
 
 # upnp_class to python type mapping
-def type_by_upnp_class(upnp_class: str) -> Optional[Type[DidlObject]]:
-    """Get DidlObject-type by upnp_class."""
-    return _upnp_class_map.get(upnp_class)
+def type_by_upnp_class(
+    upnp_class: str, strict: bool = True
+) -> Optional[Type[DidlObject]]:
+    """Get DidlObject-type by upnp_class.
+
+    When strict is False, the upnp_class lookup will be done ignoring string
+    case.
+    """
+    if strict:
+        return _upnp_class_map.get(upnp_class)
+    return _upnp_class_map_lowercase.get(upnp_class.lower())
