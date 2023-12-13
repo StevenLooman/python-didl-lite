@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for didl_lite."""
 
+import pytest
 from defusedxml import ElementTree as ET
 
 from didl_lite import didl_lite
@@ -70,8 +71,11 @@ class TestDidlLite:
         <upnp:longDescription>Long description</upnp:longDescription>
     </item>
 </DIDL-Lite>"""
-        items = didl_lite.from_xml_string(didl_string)
-        assert items == []  # Bad class should not be found, returning nothing
+        with pytest.raises(
+            didl_lite.DidlLiteException,
+            match="upnp:class Object.Item.AudioItem is unknown",
+        ):
+            didl_lite.from_xml_string(didl_string)
 
         items = didl_lite.from_xml_string(didl_string, strict=False)
         assert len(items) == 1

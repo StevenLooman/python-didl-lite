@@ -1097,6 +1097,8 @@ def from_xml_el(
             continue
         didl_object_type = type_by_upnp_class(upnp_class.text, strict)
         if didl_object_type is None:
+            if strict:
+                raise DidlLiteException(f"upnp:class {upnp_class.text} is unknown")
             continue
         didl_object = didl_object_type.from_xml(child_el, strict)
         didl_objects.append(didl_object)
