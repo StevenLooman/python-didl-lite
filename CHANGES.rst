@@ -1,7 +1,10 @@
 Changes
 =======
 
-1.3.3 (unreleased)
+1.4.0 (unreleased)
+
+- Treat upnp:class as case-insensitive when in non-strict mode (@chishm)
+- Raise a `DidlLiteException` when upnp:class is invalid when in strict mode (@chishm)
 
 
 1.3.2 (2021-11-29)
