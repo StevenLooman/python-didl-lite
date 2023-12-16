@@ -28,10 +28,10 @@ from .utils import (
     to_camel_case,
 )
 
-TDO = TypeVar("TDO", bound="DidlObject")
-TC = TypeVar("TC", bound="Container")
-TD = TypeVar("TD", bound="Descriptor")
-TR = TypeVar("TR", bound="Resource")
+TDO = TypeVar("TDO", bound="DidlObject")  # pylint: disable=invalid-name
+TC = TypeVar("TC", bound="Container")  # pylint: disable=invalid-name
+TD = TypeVar("TD", bound="Descriptor")  # pylint: disable=invalid-name
+TR = TypeVar("TR", bound="Resource")  # pylint: disable=invalid-name
 
 
 class DidlLiteException(Exception):

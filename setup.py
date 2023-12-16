@@ -17,7 +17,7 @@ INSTALL_REQUIRES = [
 
 
 TEST_REQUIRES = [
-    "pytest~=6.1.2",
+    "pytest~=7.4.3",
 ]
 
 

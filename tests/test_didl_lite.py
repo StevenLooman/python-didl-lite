@@ -17,7 +17,7 @@ NAMESPACES = {
 class TestDidlLite:
     """Tests for didl_lite."""
 
-    # pylint: disable=no-self-use, too-many-public-methods
+    # pylint: disable=too-many-public-methods
 
     def test_item_from_xml(self) -> None:
         """Test item from XML."""
@@ -642,7 +642,7 @@ class TestDidlLite:
         assert not hasattr(item, "otherItem")
         assert not hasattr(item, "other_item")
 
-        item.storageMedium = "CD"
+        item.storageMedium = "CD"  # pylint: disable=invalid-name
         assert item.storage_medium is item.storageMedium
         assert item.storage_medium == "CD"
 
@@ -650,7 +650,7 @@ class TestDidlLite:
         assert item.long_description is item.longDescription
         assert item.long_description == "Long description"
 
-        item.otherItem = "otherItem"
+        item.otherItem = "otherItem"  # pylint: disable=invalid-name
         assert hasattr(item, "otherItem")
         assert not hasattr(item, "other_item")
         assert item.otherItem == "otherItem"
