@@ -23,7 +23,7 @@ TEST_REQUIRES = [
 
 setup(
     name="python-didl-lite",
-    version="1.3.3.dev0",
+    version="1.4.0.dev0",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/x-rst",
@@ -44,6 +44,7 @@ setup(
     package_data={
         "didl_lite": ["py.typed"],
     },
+    python_requires=">=3.6",
     install_requires=INSTALL_REQUIRES,
     tests_require=TEST_REQUIRES,
 )

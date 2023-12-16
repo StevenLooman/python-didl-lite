@@ -39,6 +39,12 @@ class DidlLiteException(Exception):
 
 
 # region: DidlObjects
+
+# upnp_class to python type mapping
+_upnp_class_map: Dict[str, Type["DidlObject"]] = {}
+_upnp_class_map_lowercase: Dict[str, Type["DidlObject"]] = {}
+
+
 class DidlObject:
     """DIDL Object."""
 
@@ -60,6 +66,15 @@ class DidlObject:
     res: List["Resource"]
     xml_el: Optional[ET.Element]
     descriptors: Sequence["Descriptor"]
+
+    @classmethod
+    def __init_subclass__(cls: Type["DidlObject"], **kwargs: Any) -> None:
+        """Create mapping of upnp_class to Python type for fast lookup."""
+        super().__init_subclass__(**kwargs)
+        assert cls.upnp_class not in _upnp_class_map
+        assert cls.upnp_class.lower() not in _upnp_class_map_lowercase
+        _upnp_class_map[cls.upnp_class] = cls
+        _upnp_class_map_lowercase[cls.upnp_class.lower()] = cls
 
     def __init__(
         self,
@@ -84,9 +99,6 @@ class DidlObject:
 
         self.xml_el = xml_el
         self.descriptors = descriptors if descriptors else []
-
-    def _clean_property_names(self, properties: Dict[str, Any]) -> Dict[str, Any]:
-        """Turn all property names into lower_camel_case."""
 
     def _ensure_required_properties(
         self, strict: bool, properties: Mapping[str, Any]
@@ -1083,8 +1095,10 @@ def from_xml_el(
         upnp_class = child_el.find("./upnp:class", NAMESPACES)
         if upnp_class is None or not upnp_class.text:
             continue
-        didl_object_type = type_by_upnp_class(upnp_class.text)
+        didl_object_type = type_by_upnp_class(upnp_class.text, strict)
         if didl_object_type is None:
+            if strict:
+                raise DidlLiteException(f"upnp:class {upnp_class.text} is unknown")
             continue
         didl_object = didl_object_type.from_xml(child_el, strict)
         didl_objects.append(didl_object)
@@ -1098,13 +1112,14 @@ def from_xml_el(
 
 
 # upnp_class to python type mapping
-def type_by_upnp_class(upnp_class: str) -> Optional[Type[DidlObject]]:
-    """Get DidlObject-type by upnp_class."""
-    queue = DidlObject.__subclasses__()
-    while queue:
-        type_ = queue.pop()
-        queue.extend(type_.__subclasses__())
+def type_by_upnp_class(
+    upnp_class: str, strict: bool = True
+) -> Optional[Type[DidlObject]]:
+    """Get DidlObject-type by upnp_class.
 
-        if type_.upnp_class == upnp_class:
-            return type_
-    return None
+    When strict is False, the upnp_class lookup will be done ignoring string
+    case.
+    """
+    if strict:
+        return _upnp_class_map.get(upnp_class)
+    return _upnp_class_map_lowercase.get(upnp_class.lower())
