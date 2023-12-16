@@ -5,6 +5,7 @@ Changes
 
 - Treat upnp:class as case-insensitive when in non-strict mode (@chishm)
 - Raise a `DidlLiteException` when upnp:class is invalid when in strict mode (@chishm)
+- Drop Python3.6 and Python3.7 support, add Python3.10, Python3.11, Python3.12 support
 
 
 1.3.2 (2021-11-29)

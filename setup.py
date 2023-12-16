@@ -23,7 +23,7 @@ TEST_REQUIRES = [
 
 setup(
     name="python-didl-lite",
-    version="1.4.0.dev0",
+    version="1.4.0",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/x-rst",
@@ -35,16 +35,17 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     packages=["didl_lite"],
     package_data={
         "didl_lite": ["py.typed"],
     },
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     tests_require=TEST_REQUIRES,
 )
