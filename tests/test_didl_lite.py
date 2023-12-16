@@ -642,7 +642,7 @@ class TestDidlLite:
         assert not hasattr(item, "otherItem")
         assert not hasattr(item, "other_item")
 
-        item.storageMedium = "CD"  # pylint: disable=invalid-name
+        item.storageMedium = "CD"
         assert item.storage_medium is item.storageMedium
         assert item.storage_medium == "CD"
 
@@ -650,7 +650,7 @@ class TestDidlLite:
         assert item.long_description is item.longDescription
         assert item.long_description == "Long description"
 
-        item.otherItem = "otherItem"  # pylint: disable=invalid-name
+        item.otherItem = "otherItem"
         assert hasattr(item, "otherItem")
         assert not hasattr(item, "other_item")
         assert item.otherItem == "otherItem"
