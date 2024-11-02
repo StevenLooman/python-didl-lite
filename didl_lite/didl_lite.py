@@ -1094,7 +1094,13 @@ def from_xml_el(
         # construct item
         upnp_class = child_el.find("./upnp:class", NAMESPACES)
         if upnp_class is None or not upnp_class.text:
-            continue
+            if strict:
+                continue
+            # WiiM Pro and possibly other Linkplay devices emit
+            # upnp_class above the item element instead of inside it
+            upnp_class = xml_el.find("./upnp:class", NAMESPACES)
+            if upnp_class is None or not upnp_class.text:
+                continue
         didl_object_type = type_by_upnp_class(upnp_class.text, strict)
         if didl_object_type is None:
             if strict:
