@@ -654,3 +654,29 @@ class TestDidlLite:
         assert hasattr(item, "otherItem")
         assert not hasattr(item, "other_item")
         assert item.otherItem == "otherItem"
+
+    def test_item_improper_class_nesting(self) -> None:
+        """
+        Test item from XML that has upnp_class element above item.
+
+        Cater for WiiM Pro and possibly other Linkplay devices that
+        emit upnp_class above the item element instead of inside it
+        """
+        didl_string = """
+<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+    xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
+    <upnp:class>object.item.audioItem.musicTrack</upnp:class>
+    <item id="0">
+        <res protocolInfo="protocol_info"></res>
+        <dc:title>Music Track Title</dc:title>
+        <dc:creator>Music Track Creator</dc:creator>
+        <upnp:artist>Artist</upnp:artist>
+        <upnp:album>Album</upnp:album>
+    </item>
+</DIDL-Lite>"""
+        items = didl_lite.from_xml_string(didl_string, strict=False)
+        assert len(items) == 1
+
+        item = items[0]
+        assert isinstance(item, didl_lite.MusicTrack)
