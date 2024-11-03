@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.4.1
+1.4.1 (2024-11-03)
 
 - Cater for malformed XML from WiiM pro in non-strict mode (#14, @pp81381)
 - Add Python 3.13 support
