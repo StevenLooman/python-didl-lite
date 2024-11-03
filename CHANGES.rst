@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.4.1
+
+- Cater for malformed XML from WiiM pro in non-strict mode (#14, @pp81381)
+
+
 1.4.0 (2023-12-16)
 
 - Treat upnp:class as case-insensitive when in non-strict mode (@chishm)
