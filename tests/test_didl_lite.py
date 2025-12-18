@@ -680,3 +680,26 @@ class TestDidlLite:
 
         item = items[0]
         assert isinstance(item, didl_lite.MusicTrack)
+
+    def test_from_xml_string_unbound_prefix(self):
+        # The key fix is adding: xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
+        broken_xml = (
+            '<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
+            'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+            'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" '
+            'xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/">'
+            '<item id="1" parentID="0" restricted="1">'
+            '<dc:title>Test Title</dc:title>'
+            '<song:subTitle>Test Subtitle</song:subTitle>'
+            '<upnp:class>object.item.audioItem.musicTrack</upnp:class>'
+            '</item>'
+            '</DIDL-Lite>'
+        )
+
+        # Bu çağrı strict=False iken ParseError fırlatmamalıdır
+        objs = didl_lite.from_xml_string(broken_xml, strict=False)
+
+        assert len(objs) == 1
+        assert objs[0].title == "Test Title"
+        # Geçici namespace'in doğru atandığını kontrol edebilirsin
+        assert "sub_title" in objs[0].__dict__
