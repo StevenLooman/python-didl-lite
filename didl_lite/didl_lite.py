@@ -1089,15 +1089,14 @@ def from_xml_string(
         defined_prefixes = set(re.findall(r'xmlns:([a-zA-Z0-9]+)=', xml_string))
 
         # Identify prefixes used but not defined.
-        # Exclude known namespaces that might be handled globally or are standard.
         missing_prefixes = used_prefixes - defined_prefixes - {'DIDL-Lite', 'dc', 'upnp', 'dlna'}
 
-        if missing_prefixes:
-            for prefix in missing_prefixes:
-                # Inject a temporary namespace definition for each missing prefix.
-                # We anchor the injection next to the standard dlna namespace.
-                replacement = f'xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:{prefix}="http://tempuri.org/{prefix}/"'
-                xml_string = xml_string.replace('xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/"', replacement)
+        # Remove the "if missing_prefixes:" line and just keep the for loop
+        for prefix in missing_prefixes:
+            dlna_ns = 'xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/"'
+            if dlna_ns in xml_string:
+                replacement = f'{dlna_ns} xmlns:{prefix}="http://tempuri.org/{prefix}/"'
+                xml_string = xml_string.replace(dlna_ns, replacement)
 
     # Proceed with parsing using the (potentially) patched xml_string
     xml_el = defusedxml.ElementTree.fromstring(xml_string)
