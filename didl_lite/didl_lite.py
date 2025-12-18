@@ -1072,8 +1072,34 @@ def to_xml_string(*objects: DidlObject) -> bytes:
 
 def from_xml_string(
     xml_string: str, strict: bool = True
-) -> List[Union[DidlObject, Descriptor]]:
-    """Convert XML string to DIDL Objects."""
+) -> List[Union[DidlObject]]:
+    """Parse DIDL-Lite XML string.
+
+    :param xml_string: The XML string to parse.
+    :param strict: Whether to use strict parsing.
+    :return: List of DidlObjects.
+    :"""
+
+    if not strict:
+        import re
+        # Find all prefixes used in tags, e.g., <prefix:tag ...>
+        used_prefixes = set(re.findall(r'<([a-zA-Z0-9]+):', xml_string))
+
+        # Find all defined namespaces, e.g., xmlns:prefix=...
+        defined_prefixes = set(re.findall(r'xmlns:([a-zA-Z0-9]+)=', xml_string))
+
+        # Identify prefixes used but not defined.
+        # Exclude known namespaces that might be handled globally or are standard.
+        missing_prefixes = used_prefixes - defined_prefixes - {'DIDL-Lite', 'dc', 'upnp', 'dlna'}
+
+        if missing_prefixes:
+            for prefix in missing_prefixes:
+                # Inject a temporary namespace definition for each missing prefix.
+                # We anchor the injection next to the standard dlna namespace.
+                replacement = f'xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:{prefix}="http://tempuri.org/{prefix}/"'
+                xml_string = xml_string.replace('xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/"', replacement)
+
+    # Proceed with parsing using the (potentially) patched xml_string
     xml_el = defusedxml.ElementTree.fromstring(xml_string)
     return from_xml_el(xml_el, strict)
 
