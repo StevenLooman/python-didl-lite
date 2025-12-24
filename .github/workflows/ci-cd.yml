@@ -12,7 +12,7 @@ jobs:
     name: Markdown Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: DavidAnson/markdownlint-cli2-action@v21
+      - uses: DavidAnson/markdownlint-cli2-action@v22
         with:
           globs: "**/*.md"
 
@@ -38,7 +38,7 @@ jobs:
       - name: Build package
         run: python -m build
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: python-package-distributions-${{ matrix.python-version }}
           path: dist/
@@ -64,7 +64,7 @@ jobs:
       id-token: write
     steps:
       - name: Download all the dists
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions-${{ env.publish-python-version }}
           path: dist/
@@ -80,7 +80,7 @@ jobs:
       id-token: write
     steps:
       - name: Download all the dists
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions-${{ env.publish-python-version }}
           path: dist/
@@ -120,7 +120,7 @@ jobs:
       id-token: write
     steps:
       - name: Download all the dists
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions-${{ env.publish-python-version }}
           path: dist/
