@@ -2,6 +2,7 @@
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
+import re
 from typing import (
     Any,
     Dict,
@@ -1072,24 +1073,19 @@ def to_xml_string(*objects: DidlObject) -> bytes:
 
 def from_xml_string(
     xml_string: str, strict: bool = True
-) -> List[Union[DidlObject]]:
-    """Parse DIDL-Lite XML string.
-
-    :param xml_string: The XML string to parse.
-    :param strict: Whether to use strict parsing.
-    :return: List of DidlObjects.
-    :"""
-
+) -> List[Union[DidlObject, Descriptor]]:
+    """Parse DIDL-Lite XML string."""
     if not strict:
-        import re
         # Find all prefixes used in tags, e.g., <prefix:tag ...>
-        used_prefixes = set(re.findall(r'<([a-zA-Z0-9]+):', xml_string))
+        used_prefixes = set(re.findall(r"<([a-zA-Z0-9]+):", xml_string))
 
         # Find all defined namespaces, e.g., xmlns:prefix=...
-        defined_prefixes = set(re.findall(r'xmlns:([a-zA-Z0-9]+)=', xml_string))
+        defined_prefixes = set(re.findall(r"xmlns:([a-zA-Z0-9]+)=", xml_string))
 
         # Identify prefixes used but not defined.
-        missing_prefixes = used_prefixes - defined_prefixes - {'DIDL-Lite', 'dc', 'upnp', 'dlna'}
+        missing_prefixes = (
+            used_prefixes - defined_prefixes - {"DIDL-Lite", "dc", "upnp", "dlna"}
+        )
 
         # Remove the "if missing_prefixes:" line and just keep the for loop
         for prefix in missing_prefixes:
