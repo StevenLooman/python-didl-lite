@@ -706,3 +706,12 @@ class TestDidlLite:
         assert "sub_title" in objs[0].__dict__
         assert objs[0].sub_title == "Test Subtitle"
         assert isinstance(objs[0], didl_lite.MusicTrack)
+
+def test_music_track_artist_and_genre():
+    from didl_lite.didl_lite import MusicTrack, to_xml_string
+    track = MusicTrack(id="1", parent_id="0", title="Test", restricted="0", artist="My Artist", genre="My Genre")
+
+    xml = to_xml_string(track)
+
+    assert b"<upnp:artist>My Artist</upnp:artist>" in xml
+    assert b"<upnp:genre>My Genre</upnp:genre>" in xml
