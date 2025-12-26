@@ -2,6 +2,7 @@
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
+import re
 from typing import (
     Any,
     Dict,
@@ -1073,7 +1074,27 @@ def to_xml_string(*objects: DidlObject) -> bytes:
 def from_xml_string(
     xml_string: str, strict: bool = True
 ) -> List[Union[DidlObject, Descriptor]]:
-    """Convert XML string to DIDL Objects."""
+    """Parse DIDL-Lite XML string."""
+    if not strict:
+        # Find all prefixes used in tags, e.g., <prefix:tag ...>
+        used_prefixes = set(re.findall(r"<([a-zA-Z0-9]+):", xml_string))
+
+        # Find all defined namespaces, e.g., xmlns:prefix=...
+        defined_prefixes = set(re.findall(r"xmlns:([a-zA-Z0-9]+)=", xml_string))
+
+        # Identify prefixes used but not defined.
+        missing_prefixes = (
+            used_prefixes - defined_prefixes - {"DIDL-Lite", "dc", "upnp", "dlna"}
+        )
+
+        # Remove the "if missing_prefixes:" line and just keep the for loop
+        for prefix in missing_prefixes:
+            dlna_ns = 'xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/"'
+            if dlna_ns in xml_string:
+                replacement = f'{dlna_ns} xmlns:{prefix}="http://tempuri.org/{prefix}/"'
+                xml_string = xml_string.replace(dlna_ns, replacement)
+
+    # Proceed with parsing using the (potentially) patched xml_string
     xml_el = defusedxml.ElementTree.fromstring(xml_string)
     return from_xml_el(xml_el, strict)
 
