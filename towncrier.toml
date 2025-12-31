@@ -1,0 +1,6 @@
+[tool.towncrier]
+name = "python-didl-lite"
+package = "didl_lite"
+package_dir = "didl_lite"
+directory = "changes"
+filename = "CHANGES.rst"
