@@ -34,7 +34,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-    "pytest~=9.0.2",
+    "pytest==9.0.2",
 ]
 
 [tool.setuptools]
