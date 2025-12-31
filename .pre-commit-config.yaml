@@ -42,5 +42,5 @@ repos:
         args: [--ignore-missing-imports]
         additional_dependencies:
           - aiohttp>=3.7.4
-          - pytest~=6.2.4
+          - pytest~=9.0.2
         files: ^(async_upnp_client|tests)/.+\.py$
