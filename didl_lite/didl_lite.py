@@ -87,7 +87,7 @@ class DidlObject:
         **properties: Any,
     ) -> None:
         """Initialize."""
-        # pylint: disable=invalid-name,redefined-builtin,too-many-arguments
+        # pylint: disable=invalid-name,redefined-builtin,too-many-arguments,too-many-positional-arguments
         properties["id"] = id
         properties["parent_id"] = parent_id
         properties["class"] = self.upnp_class
@@ -628,7 +628,7 @@ class Container(DidlObject, list):
         **properties: Any,
     ) -> None:
         """Initialize."""
-        # pylint: disable=redefined-builtin,too-many-arguments
+        # pylint: disable=redefined-builtin,too-many-arguments,too-many-positional-arguments
         super().__init__(id, parent_id, descriptors, xml_el, strict, **properties)
         self.extend(children)
 
@@ -930,7 +930,7 @@ class Resource:
         xml_el: Optional[ET.Element] = None,
     ) -> None:
         """Initialize."""
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments,too-many-positional-arguments
         self.uri = uri
         self.protocol_info = protocol_info
         self.import_uri = import_uri
@@ -1008,7 +1008,7 @@ class Descriptor:
         xml_el: Optional[ET.Element] = None,
     ) -> None:
         """Initialize."""
-        # pylint: disable=invalid-name,redefined-builtin,too-many-arguments
+        # pylint: disable=invalid-name,redefined-builtin,too-many-arguments,too-many-positional-arguments
         self.id = id
         self.name_space = name_space
         self.type = type
