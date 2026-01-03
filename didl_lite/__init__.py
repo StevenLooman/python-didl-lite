@@ -3,4 +3,4 @@
 
 from didl_lite import didl_lite  # noqa: F401
 
-__version__ = "1.4.1"
+__version__ = "1.5.0"
