@@ -1,3 +1,22 @@
+python-didl-lite 1.5.0 (2026-01-03)
+===================================
+
+Features
+--------
+
+- Handle unbound XML prefixes when strict=False
+
+  Allow for unbound XML prefixes when parsing with strict=False.
+  This is useful for handling XML documents that may have missing
+  namespace declarations. (#35)
+
+
+Misc
+----
+
+- #37, #38
+
+
 Changes
 =======
 
