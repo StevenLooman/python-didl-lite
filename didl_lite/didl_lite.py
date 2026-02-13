@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """DIDL-Lite (Digital Item Declaration Language) tools for Python."""
 # pylint: disable=too-many-lines
 
@@ -101,9 +100,7 @@ class DidlObject:
         self.xml_el = xml_el
         self.descriptors = descriptors if descriptors else []
 
-    def _ensure_required_properties(
-        self, strict: bool, properties: Mapping[str, Any]
-    ) -> None:
+    def _ensure_required_properties(self, strict: bool, properties: Mapping[str, Any]) -> None:
         """Check if all required properties are given."""
         if not strict:
             return
@@ -184,9 +181,7 @@ class DidlObject:
                 continue
             key = didl_property_def_key(property_def)
 
-            if (
-                getattr(self, key) is None or key == "res"
-            ):  # no resources, handled later on
+            if getattr(self, key) is None or key == "res":  # no resources, handled later on
                 continue
 
             tag = property_def[0] + ":" + property_def[1]
@@ -245,11 +240,7 @@ class DidlObject:
     def __repr__(self) -> str:
         """Evaluatable string representation of this object."""
         class_name = type(self).__name__
-        attr = ", ".join(
-            f"{key}={val!r}"
-            for key, val in self.__dict__.items()
-            if key not in ("class", "xml_el")
-        )
+        attr = ", ".join(f"{key}={val!r}" for key, val in self.__dict__.items() if key not in ("class", "xml_el"))
         return f"{class_name}({attr})"
 
 
@@ -660,11 +651,7 @@ class Container(DidlObject, list):
     def __repr__(self) -> str:
         """Evaluatable string representation of this object."""
         class_name = type(self).__name__
-        attr = ", ".join(
-            f"{key}={val!r}"
-            for key, val in self.__dict__.items()
-            if key not in ("class", "xml_el")
-        )
+        attr = ", ".join(f"{key}={val!r}" for key, val in self.__dict__.items() if key not in ("class", "xml_el"))
         children_repr = ", ".join(repr(child) for child in self)
         return f"{class_name}({attr}, children=[{children_repr}])"
 
@@ -988,11 +975,7 @@ class Resource:
     def __repr__(self) -> str:
         """Evaluatable string representation of this object."""
         class_name = type(self).__name__
-        attr = ", ".join(
-            f"{key}={val!r}"
-            for key, val in self.__dict__.items()
-            if val is not None and key != "xml_el"
-        )
+        attr = ", ".join(f"{key}={val!r}" for key, val in self.__dict__.items() if val is not None and key != "xml_el")
         return f"{class_name}({attr})"
 
 
@@ -1045,11 +1028,7 @@ class Descriptor:
     def __repr__(self) -> str:
         """Evaluatable string representation of this object."""
         class_name = type(self).__name__
-        attr = ", ".join(
-            f"{key}={val!r}"
-            for key, val in self.__dict__.items()
-            if val is not None and key != "xml_el"
-        )
+        attr = ", ".join(f"{key}={val!r}" for key, val in self.__dict__.items() if val is not None and key != "xml_el")
         return f"{class_name}({attr})"
 
 
@@ -1071,9 +1050,7 @@ def to_xml_string(*objects: DidlObject) -> bytes:
     return ET.tostring(root_el)
 
 
-def from_xml_string(
-    xml_string: str, strict: bool = True
-) -> List[Union[DidlObject, Descriptor]]:
+def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObject, Descriptor]]:
     """Parse DIDL-Lite XML string."""
     if not strict:
         # Find all prefixes used in tags, e.g., <prefix:tag ...>
@@ -1083,9 +1060,7 @@ def from_xml_string(
         defined_prefixes = set(re.findall(r"xmlns:([a-zA-Z0-9]+)=", xml_string))
 
         # Identify prefixes used but not defined.
-        missing_prefixes = (
-            used_prefixes - defined_prefixes - {"DIDL-Lite", "dc", "upnp", "dlna"}
-        )
+        missing_prefixes = used_prefixes - defined_prefixes - {"DIDL-Lite", "dc", "upnp", "dlna"}
 
         # Remove the "if missing_prefixes:" line and just keep the for loop
         for prefix in missing_prefixes:
@@ -1099,17 +1074,15 @@ def from_xml_string(
     return from_xml_el(xml_el, strict)
 
 
-def from_xml_el(
-    xml_el: ET.Element, strict: bool = True
-) -> List[Union[DidlObject, Descriptor]]:
+def from_xml_el(xml_el: ET.Element, strict: bool = True) -> List[Union[DidlObject, Descriptor]]:
     """Convert XML Element to DIDL Objects."""
     didl_objects = []  # type: List[Union[DidlObject, Descriptor]]
 
     # items and containers, in order
     for child_el in xml_el:
-        if child_el.tag != expand_namespace_tag(
-            "didl_lite:item"
-        ) and child_el.tag != expand_namespace_tag("didl_lite:container"):
+        if child_el.tag != expand_namespace_tag("didl_lite:item") and child_el.tag != expand_namespace_tag(
+            "didl_lite:container"
+        ):
             continue
 
         # construct item
@@ -1139,9 +1112,7 @@ def from_xml_el(
 
 
 # upnp_class to python type mapping
-def type_by_upnp_class(
-    upnp_class: str, strict: bool = True
-) -> Optional[Type[DidlObject]]:
+def type_by_upnp_class(upnp_class: str, strict: bool = True) -> Optional[Type[DidlObject]]:
     """Get DidlObject-type by upnp_class.
 
     When strict is False, the upnp_class lookup will be done ignoring string

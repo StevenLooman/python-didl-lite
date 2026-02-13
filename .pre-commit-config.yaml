@@ -1,16 +1,20 @@
+ci:
+  autofix_prs: true
+  autoupdate_schedule: weekly
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 'v6.0.0'
     hooks:
     - id: end-of-file-fixer
     - id: trailing-whitespace
-  - repo: https://github.com/psf/black
-    rev: '25.12.0'
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.15.1'
     hooks:
-      - id: black
-        args:
-          - --safe
-          - --quiet
+      - id: ruff
+        args: [--fix]
+        files: ^(didl_lite|tests)/.+\.py$
+      - id: ruff-format
         files: ^(didl_lite|tests)/.+\.py$
   - repo: https://github.com/codespell-project/codespell
     rev: 'v2.4.1'
@@ -21,20 +25,6 @@ repos:
           - --quiet-level=2
         exclude_types: [csv, json]
         exclude: ^tests/fixtures/
-  - repo: https://github.com/pycqa/flake8
-    rev: '7.3.0'
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-docstrings==1.7.0
-          - pydocstyle==6.3.0
-        files: ^(didl_lite|tests)/.+\.py$
-  - repo: https://github.com/PyCQA/isort
-    rev: '7.0.0'
-    hooks:
-      - id: isort
-        args:
-          - --profile=black
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: 'v1.19.1'
     hooks:
@@ -43,3 +33,7 @@ repos:
         additional_dependencies:
           - pytest==9.0.2
         files: ^(didl_lite|tests)/.+\.py$
+  - repo: https://github.com/fpgmaas/deptry
+    rev: '0.24.0'
+    hooks:
+      - id: deptry
