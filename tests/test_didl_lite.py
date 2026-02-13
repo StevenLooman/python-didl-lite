@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Unit tests for didl_lite."""
 
 import pytest
@@ -234,9 +233,7 @@ class TestDidlLite:
 
     def test_container_to_xml(self) -> None:
         """Test container to XML."""
-        container = didl_lite.Album(
-            id="0", parent_id="0", title="Audio Item Title", restricted="1"
-        )
+        container = didl_lite.Album(id="0", parent_id="0", title="Audio Item Title", restricted="1")
         resource = didl_lite.Resource("url", "protocol_info")
         item = didl_lite.AudioItem(
             id="0",
@@ -285,9 +282,7 @@ class TestDidlLite:
         # pylint: disable=import-outside-toplevel
         from didl_lite.didl_lite import Album, AudioItem, Resource
 
-        container = Album(
-            id="0", parent_id="0", title="Audio Item Title", restricted="1"
-        )
+        container = Album(id="0", parent_id="0", title="Audio Item Title", restricted="1")
         resource = Resource("url", "protocol_info")
         item = AudioItem(
             id="0",
@@ -427,9 +422,7 @@ class TestDidlLite:
 
     def test_descriptor_to_xml(self) -> None:
         """Test descriptor to XML."""
-        descriptor = didl_lite.Descriptor(
-            id="1", name_space="ns", type="type", text="Text"
-        )
+        descriptor = didl_lite.Descriptor(id="1", name_space="ns", type="type", text="Text")
         item = didl_lite.AudioItem(
             id="0",
             parent_id="0",
@@ -468,9 +461,7 @@ class TestDidlLite:
 
         descriptor_repr = repr(descriptor)
         descriptor_remade = eval(descriptor_repr)  # pylint: disable=eval-used
-        assert ET.tostring(descriptor.to_xml()) == ET.tostring(
-            descriptor_remade.to_xml()
-        )
+        assert ET.tostring(descriptor.to_xml()) == ET.tostring(descriptor_remade.to_xml())
 
     def test_item_order(self) -> None:
         """Test item ordering."""
@@ -608,9 +599,7 @@ class TestDidlLite:
 
     def test_default_properties_set(self) -> None:
         """Test defaults for item properties."""
-        item = didl_lite.VideoItem(
-            id="0", parent_id="0", title="Video Item Title", restricted="1"
-        )
+        item = didl_lite.VideoItem(id="0", parent_id="0", title="Video Item Title", restricted="1")
         assert hasattr(item, "genre_type")  # property is set
 
     def test_property_case(self) -> None:

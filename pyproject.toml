@@ -46,9 +46,6 @@ version = { attr = "didl_lite.__version__" }
 [tool.setuptools.package-data]
 didl_lite = ["py.typed"]
 
-[tool.flake8]
-max-line-length = 99
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_calls = true
@@ -61,3 +58,37 @@ warn_redundant_casts = true
 warn_return_any = true
 warn_unused_configs = true
 warn_unused_ignores = true
+
+[tool.ruff]
+line-length = 119
+
+[tool.ruff.lint]
+select = ["C901", "D", "E", "F", "I", "W"]
+ignore = ["D202"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.isort]
+known-first-party = ["didl_lite"]
+
+[tool.deptry]
+package_module_name_map = { "pytest" = "pytest" }
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["pytest"]
+
+[tool.pylint.format]
+max-line-length = 119
+
+[tool.pylint.basic]
+good-names = ["otherItem", "storageMedium"]
+
+[tool.codespell]
+ignore-words-list = "wan"
+
+[tool.coverage.run]
+source = ["didl_lite"]
