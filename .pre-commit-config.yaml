@@ -33,7 +33,3 @@ repos:
         additional_dependencies:
           - pytest==9.0.2
         files: ^(didl_lite|tests)/.+\.py$
-  - repo: https://github.com/fpgmaas/deptry
-    rev: '0.24.0'
-    hooks:
-      - id: deptry
