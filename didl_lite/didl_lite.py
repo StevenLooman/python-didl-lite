@@ -312,6 +312,7 @@ class MusicTrack(AudioItem):
     didl_properties_defs = AudioItem.didl_properties_defs + [
         ("upnp", "artist", "O"),
         ("upnp", "album", "O"),
+        ("upnp", "albumArtURI", "O"),
         ("upnp", "originalTrackNumber", "O"),
         ("upnp", "playlist", "O"),
         ("upnp", "storageMedium", "O"),
