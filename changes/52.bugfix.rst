@@ -1,0 +1,1 @@
+Fix unbound prefix recovery when ``xmlns:dlna`` is absent. Devices that emit unbound prefixes (e.g. ``<song:subTitle>``) without declaring ``xmlns:dlna`` are now handled correctly when ``strict=False``.

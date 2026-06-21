@@ -1063,12 +1063,23 @@ def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObje
         # Identify prefixes used but not defined.
         missing_prefixes = used_prefixes - defined_prefixes - {"DIDL-Lite", "dc", "upnp", "dlna"}
 
-        # Remove the "if missing_prefixes:" line and just keep the for loop
-        for prefix in missing_prefixes:
-            dlna_ns = 'xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/"'
-            if dlna_ns in xml_string:
-                replacement = f'{dlna_ns} xmlns:{prefix}="http://tempuri.org/{prefix}/"'
-                xml_string = xml_string.replace(dlna_ns, replacement)
+        if missing_prefixes:
+            # Inject temporary namespace declarations into the DIDL-Lite root
+            # opening tag. Anchoring on `<DIDL-Lite` (always present in valid
+            # DIDL-Lite documents) instead of an optional `xmlns:dlna` allows
+            # us to recover XML from devices that omit the dlna namespace
+            # declaration entirely (observed on JBL Authentics and
+            # WiiM/LinkPlay players sending `<song:*>` without `xmlns:dlna`).
+            injections = " ".join(
+                f'xmlns:{prefix}="http://tempuri.org/{prefix}/"'
+                for prefix in sorted(missing_prefixes)
+            )
+            xml_string = re.sub(
+                r"<DIDL-Lite\b",
+                f"<DIDL-Lite {injections}",
+                xml_string,
+                count=1,
+            )
 
     # Proceed with parsing using the (potentially) patched xml_string
     xml_el = defusedxml.ElementTree.fromstring(xml_string)

@@ -696,6 +696,35 @@ class TestDidlLite:
         assert objs[0].sub_title == "Test Subtitle"
         assert isinstance(objs[0], didl_lite.MusicTrack)
 
+    def test_from_xml_string_unbound_prefix_without_dlna_namespace(self) -> None:
+        """Test unbound prefix recovery when xmlns:dlna is absent.
+
+        Regression: the previous implementation anchored the namespace
+        injection on an existing `xmlns:dlna` declaration. Devices such as
+        JBL Authentics and WiiM/LinkPlay players emit `<song:*>` tags
+        without declaring `xmlns:dlna`, leaving the unbound prefix in place
+        and breaking parsing even with strict=False.
+        """
+        broken_xml = (
+            '<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
+            'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+            'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">'
+            '<item id="1" parentID="0" restricted="1">'
+            "<dc:title>Test Title</dc:title>"
+            "<song:subTitle>Test Subtitle</song:subTitle>"
+            "<upnp:class>object.item.audioItem.musicTrack</upnp:class>"
+            "</item>"
+            "</DIDL-Lite>"
+        )
+
+        objs = didl_lite.from_xml_string(broken_xml, strict=False)
+
+        assert len(objs) == 1
+        assert objs[0].title == "Test Title"
+        assert "sub_title" in objs[0].__dict__
+        assert objs[0].sub_title == "Test Subtitle"
+        assert isinstance(objs[0], didl_lite.MusicTrack)
+
     def test_music_track_artist_and_genre(self) -> None:
         """Test MusicTrack artist and genre properties."""
         track = didl_lite.MusicTrack(
