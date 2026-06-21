@@ -1071,8 +1071,7 @@ def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObje
             # declaration entirely (observed on JBL Authentics and
             # WiiM/LinkPlay players sending `<song:*>` without `xmlns:dlna`).
             injections = " ".join(
-                f'xmlns:{prefix}="http://tempuri.org/{prefix}/"'
-                for prefix in sorted(missing_prefixes)
+                f'xmlns:{prefix}="http://tempuri.org/{prefix}/"' for prefix in sorted(missing_prefixes)
             )
             xml_string = re.sub(
                 r"<DIDL-Lite\b",
