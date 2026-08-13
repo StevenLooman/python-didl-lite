@@ -1,1 +1,1 @@
-Fix unbound prefix recovery when ``xmlns:dlna`` is absent. Devices that emit unbound prefixes (e.g. ``<song:subTitle>``) without declaring ``xmlns:dlna`` are now handled correctly when ``strict=False``.
+Fix unbound prefix recovery when ``xmlns:dlna`` is absent. Devices that emit unbound prefixes (e.g. ``<song:subTitle>``) without declaring ``xmlns:dlna`` are now handled correctly when ``strict=False``. Recovery also covers documents whose root element carries a prefix (``<didl:DIDL-Lite>``) and prefixes containing the NCName characters ``-``, ``.`` and ``_``.

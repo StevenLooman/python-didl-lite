@@ -1055,27 +1055,29 @@ def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObje
     """Parse DIDL-Lite XML string."""
     if not strict:
         # Find all prefixes used in tags, e.g., <prefix:tag ...>
-        used_prefixes = set(re.findall(r"<([a-zA-Z0-9]+):", xml_string))
+        used_prefixes = set(re.findall(r"<([A-Za-z_][\w.-]*):", xml_string))
 
         # Find all defined namespaces, e.g., xmlns:prefix=...
-        defined_prefixes = set(re.findall(r"xmlns:([a-zA-Z0-9]+)=", xml_string))
+        defined_prefixes = set(re.findall(r"xmlns:([A-Za-z_][\w.-]*)=", xml_string))
 
         # Identify prefixes used but not defined.
         missing_prefixes = used_prefixes - defined_prefixes - {"DIDL-Lite", "dc", "upnp", "dlna"}
 
         if missing_prefixes:
             # Inject temporary namespace declarations into the DIDL-Lite root
-            # opening tag. Anchoring on `<DIDL-Lite` (always present in valid
-            # DIDL-Lite documents) instead of an optional `xmlns:dlna` allows
-            # us to recover XML from devices that omit the dlna namespace
-            # declaration entirely (observed on JBL Authentics and
+            # opening tag. Anchoring on the root element (always present in
+            # valid DIDL-Lite documents) instead of an optional `xmlns:dlna`
+            # allows us to recover XML from devices that omit the dlna
+            # namespace declaration entirely (observed on JBL Authentics and
             # WiiM/LinkPlay players sending `<song:*>` without `xmlns:dlna`).
+            # The root itself may carry a prefix, as in `<didl:DIDL-Lite>`, so
+            # the match is captured and written back unchanged.
             injections = " ".join(
                 f'xmlns:{prefix}="http://tempuri.org/{prefix}/"' for prefix in sorted(missing_prefixes)
             )
             xml_string = re.sub(
-                r"<DIDL-Lite\b",
-                f"<DIDL-Lite {injections}",
+                r"<((?:[A-Za-z_][\w.-]*:)?DIDL-Lite)\b",
+                lambda match: f"<{match.group(1)} {injections}",
                 xml_string,
                 count=1,
             )

@@ -725,6 +725,59 @@ class TestDidlLite:
         assert objs[0].sub_title == "Test Subtitle"
         assert isinstance(objs[0], didl_lite.MusicTrack)
 
+    def test_from_xml_string_unbound_prefix_with_prefixed_root(self) -> None:
+        """Test unbound prefix recovery when the root element carries a prefix.
+
+        The DIDL-Lite root may be written as `<didl:DIDL-Lite>` rather than
+        `<DIDL-Lite>`. The namespace injection has to recognise that form and
+        write the matched name back unchanged, otherwise the opening tag no
+        longer matches its closing tag.
+        """
+        broken_xml = (
+            '<didl:DIDL-Lite xmlns:didl="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
+            'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+            'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">'
+            '<didl:item id="1" parentID="0" restricted="1">'
+            "<dc:title>Test Title</dc:title>"
+            "<song:subTitle>Test Subtitle</song:subTitle>"
+            "<upnp:class>object.item.audioItem.musicTrack</upnp:class>"
+            "</didl:item>"
+            "</didl:DIDL-Lite>"
+        )
+
+        objs = didl_lite.from_xml_string(broken_xml, strict=False)
+
+        assert len(objs) == 1
+        assert objs[0].title == "Test Title"
+        assert objs[0].sub_title == "Test Subtitle"
+        assert isinstance(objs[0], didl_lite.MusicTrack)
+
+    def test_from_xml_string_unbound_prefix_with_ncname_characters(self) -> None:
+        """Test unbound prefix recovery for prefixes holding '-', '.' or '_'.
+
+        An XML namespace prefix is an NCName, so it may contain a hyphen, a
+        period or an underscore after its first character. Recovery has to
+        detect those prefixes as well, not only alphanumeric ones.
+        """
+        for prefix in ("my-song", "my.song", "my_song"):
+            broken_xml = (
+                '<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
+                'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+                'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">'
+                '<item id="1" parentID="0" restricted="1">'
+                "<dc:title>Test Title</dc:title>"
+                f"<{prefix}:subTitle>Test Subtitle</{prefix}:subTitle>"
+                "<upnp:class>object.item.audioItem.musicTrack</upnp:class>"
+                "</item>"
+                "</DIDL-Lite>"
+            )
+
+            objs = didl_lite.from_xml_string(broken_xml, strict=False)
+
+            assert len(objs) == 1, f"prefix {prefix} was not recovered"
+            assert objs[0].title == "Test Title"
+            assert isinstance(objs[0], didl_lite.MusicTrack)
+
     def test_music_track_artist_and_genre(self) -> None:
         """Test MusicTrack artist and genre properties."""
         track = didl_lite.MusicTrack(
