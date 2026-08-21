@@ -27,7 +27,7 @@ Releasing
 
 Steps for releasing:
 
-- Switch to development: ``git checkout master``
+- Switch to master: ``git checkout master``
 - Do a pull: ``git pull``
 - Run towncrier: ``towncrier build --version <version>``
 - Commit towncrier results: ``git commit -m "Towncrier"``
