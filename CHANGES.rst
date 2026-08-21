@@ -1,3 +1,24 @@
+python-didl-lite 1.5.1 (2026-08-21)
+===================================
+
+Features
+--------
+
+- Add ``albumArtURI`` to ``MusicTrack`` didl_properties_defs. (#45)
+
+
+Bugfixes
+--------
+
+- Fix unbound prefix recovery when ``xmlns:dlna`` is absent. Devices that emit unbound prefixes (e.g. ``<song:subTitle>``) without declaring ``xmlns:dlna`` are now handled correctly when ``strict=False``. Recovery also covers documents whose root element carries a prefix (``<didl:DIDL-Lite>``) and prefixes containing the NCName characters ``-``, ``.`` and ``_``. (#53)
+
+
+Misc
+----
+
+- #39
+
+
 python-didl-lite 1.5.0 (2026-01-03)
 ===================================
 
