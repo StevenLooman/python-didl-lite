@@ -31,5 +31,5 @@ repos:
       - id: mypy
         args: [--ignore-missing-imports]
         additional_dependencies:
-          - pytest==9.0.2
+          - pytest==9.1.1
         files: ^(didl_lite|tests)/.+\.py$
