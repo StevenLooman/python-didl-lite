@@ -1,7 +1,6 @@
 """Utilities."""
 
 import re
-from typing import Optional, Tuple
 
 NAMESPACES = {
     "didl_lite": "urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/",
@@ -27,7 +26,7 @@ def expand_namespace_tag(tag: str) -> str:
     return f"{{{namespace_uri}}}{tag}"
 
 
-def split_namespace_tag(namespaced_tag: str) -> Tuple[Optional[str], str]:
+def split_namespace_tag(namespaced_tag: str) -> tuple[str | None, str]:
     """
     Extract namespace and tag from namespaced-tag.
 
@@ -61,7 +60,7 @@ def didl_property_key(didl_property_name: str) -> str:
     return to_camel_case(didl_property_name.replace("@", "_"))
 
 
-def didl_property_def_key(didl_property_def: Tuple[str, ...]) -> str:
+def didl_property_def_key(didl_property_def: tuple[str, ...]) -> str:
     """Get Python property key for didl_property_def."""
     if didl_property_def[1].startswith("@"):
         return to_camel_case(didl_property_def[1].replace("@", ""))
