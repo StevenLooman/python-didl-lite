@@ -2,19 +2,8 @@
 # pylint: disable=too-many-lines
 
 import re
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Self
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree
@@ -28,11 +17,6 @@ from .utils import (
     to_camel_case,
 )
 
-TDO = TypeVar("TDO", bound="DidlObject")  # pylint: disable=invalid-name
-TC = TypeVar("TC", bound="Container")  # pylint: disable=invalid-name
-TD = TypeVar("TD", bound="Descriptor")  # pylint: disable=invalid-name
-TR = TypeVar("TR", bound="Resource")  # pylint: disable=invalid-name
-
 
 class DidlLiteException(Exception):
     """DIDL Lite Exception."""
@@ -41,16 +25,16 @@ class DidlLiteException(Exception):
 # region: DidlObjects
 
 # upnp_class to python type mapping
-_upnp_class_map: Dict[str, Type["DidlObject"]] = {}
-_upnp_class_map_lowercase: Dict[str, Type["DidlObject"]] = {}
+_upnp_class_map: dict[str, type["DidlObject"]] = {}
+_upnp_class_map_lowercase: dict[str, type["DidlObject"]] = {}
 
 
 class DidlObject:
     """DIDL Object."""
 
-    tag: Optional[str] = None
+    tag: str | None = None
     upnp_class: str = "object"
-    didl_properties_defs: List[Tuple[str, str, str]] = [
+    didl_properties_defs: list[tuple[str, str, str]] = [
         ("didl_lite", "@id", "R"),
         ("didl_lite", "@parentID", "R"),
         ("didl_lite", "@restricted", "R"),
@@ -63,12 +47,12 @@ class DidlObject:
 
     id: str
     parent_id: str
-    res: List["Resource"]
-    xml_el: Optional[ET.Element]
+    res: list["Resource"]
+    xml_el: ET.Element | None
     descriptors: Sequence["Descriptor"]
 
     @classmethod
-    def __init_subclass__(cls: Type["DidlObject"], **kwargs: Any) -> None:
+    def __init_subclass__(cls: type["DidlObject"], **kwargs: Any) -> None:
         """Create mapping of upnp_class to Python type for fast lookup."""
         super().__init_subclass__(**kwargs)
         assert cls.upnp_class not in _upnp_class_map
@@ -80,8 +64,8 @@ class DidlObject:
         self,
         id: str = "",
         parent_id: str = "",
-        descriptors: Optional[Sequence["Descriptor"]] = None,
-        xml_el: Optional[ET.Element] = None,
+        descriptors: Sequence["Descriptor"] | None = None,
+        xml_el: ET.Element | None = None,
         strict: bool = True,
         **properties: Any,
     ) -> None:
@@ -124,14 +108,14 @@ class DidlObject:
             setattr(self, key, value)
 
     @classmethod
-    def from_xml(cls: Type[TDO], xml_el: ET.Element, strict: bool = True) -> TDO:
+    def from_xml(cls, xml_el: ET.Element, strict: bool = True) -> Self:
         """
         Initialize from an XML node.
 
         I.e., parse XML and return instance.
         """
         # pylint: disable=too-many-locals
-        properties = {}  # type: Dict[str, Any]
+        properties: dict[str, Any] = {}
 
         # attributes
         for attr_key, attr_value in xml_el.attrib.items():
@@ -613,8 +597,8 @@ class Container(DidlObject, list):
         self,
         id: str = "",
         parent_id: str = "",
-        descriptors: Optional[Sequence["Descriptor"]] = None,
-        xml_el: Optional[ET.Element] = None,
+        descriptors: Sequence["Descriptor"] | None = None,
+        xml_el: ET.Element | None = None,
         strict: bool = True,
         children: Iterable[DidlObject] = (),
         **properties: Any,
@@ -625,7 +609,7 @@ class Container(DidlObject, list):
         self.extend(children)
 
     @classmethod
-    def from_xml(cls: Type[TC], xml_el: ET.Element, strict: bool = True) -> TC:
+    def from_xml(cls, xml_el: ET.Element, strict: bool = True) -> Self:
         """
         Initialize from an XML node.
 
@@ -903,19 +887,19 @@ class Resource:
 
     def __init__(
         self,
-        uri: Optional[str],
-        protocol_info: Optional[str],
-        import_uri: Optional[str] = None,
-        size: Optional[str] = None,
-        duration: Optional[str] = None,
-        bitrate: Optional[str] = None,
-        sample_frequency: Optional[str] = None,
-        bits_per_sample: Optional[str] = None,
-        nr_audio_channels: Optional[str] = None,
-        resolution: Optional[str] = None,
-        color_depth: Optional[str] = None,
-        protection: Optional[str] = None,
-        xml_el: Optional[ET.Element] = None,
+        uri: str | None,
+        protocol_info: str | None,
+        import_uri: str | None = None,
+        size: str | None = None,
+        duration: str | None = None,
+        bitrate: str | None = None,
+        sample_frequency: str | None = None,
+        bits_per_sample: str | None = None,
+        nr_audio_channels: str | None = None,
+        resolution: str | None = None,
+        color_depth: str | None = None,
+        protection: str | None = None,
+        xml_el: ET.Element | None = None,
     ) -> None:
         """Initialize."""
         # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -934,7 +918,7 @@ class Resource:
         self.xml_el = xml_el
 
     @classmethod
-    def from_xml(cls: Type[TR], xml_el: ET.Element) -> TR:
+    def from_xml(cls, xml_el: ET.Element) -> Self:
         """Initialize from an XML node."""
         uri = xml_el.text
         protocol_info = xml_el.attrib.get("protocolInfo")
@@ -987,9 +971,9 @@ class Descriptor:
         self,
         id: str,
         name_space: str,
-        type: Optional[str] = None,
-        text: Optional[str] = None,
-        xml_el: Optional[ET.Element] = None,
+        type: str | None = None,
+        text: str | None = None,
+        xml_el: ET.Element | None = None,
     ) -> None:
         """Initialize."""
         # pylint: disable=invalid-name,redefined-builtin,too-many-arguments,too-many-positional-arguments
@@ -1000,7 +984,7 @@ class Descriptor:
         self.xml_el = xml_el
 
     @classmethod
-    def from_xml(cls: Type[TD], xml_el: ET.Element) -> TD:
+    def from_xml(cls, xml_el: ET.Element) -> Self:
         """Initialize from an XML node."""
         id_ = xml_el.attrib["id"]
         name_space = xml_el.attrib["nameSpace"]
@@ -1051,7 +1035,7 @@ def to_xml_string(*objects: DidlObject) -> bytes:
     return ET.tostring(root_el)
 
 
-def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObject, Descriptor]]:
+def from_xml_string(xml_string: str, strict: bool = True) -> list[DidlObject | Descriptor]:
     """Parse DIDL-Lite XML string."""
     if not strict:
         # Find all prefixes used in tags, e.g., <prefix:tag ...>
@@ -1087,9 +1071,9 @@ def from_xml_string(xml_string: str, strict: bool = True) -> List[Union[DidlObje
     return from_xml_el(xml_el, strict)
 
 
-def from_xml_el(xml_el: ET.Element, strict: bool = True) -> List[Union[DidlObject, Descriptor]]:
+def from_xml_el(xml_el: ET.Element, strict: bool = True) -> list[DidlObject | Descriptor]:
     """Convert XML Element to DIDL Objects."""
-    didl_objects = []  # type: List[Union[DidlObject, Descriptor]]
+    didl_objects: list[DidlObject | Descriptor] = []
 
     # items and containers, in order
     for child_el in xml_el:
@@ -1125,7 +1109,7 @@ def from_xml_el(xml_el: ET.Element, strict: bool = True) -> List[Union[DidlObjec
 
 
 # upnp_class to python type mapping
-def type_by_upnp_class(upnp_class: str, strict: bool = True) -> Optional[Type[DidlObject]]:
+def type_by_upnp_class(upnp_class: str, strict: bool = True) -> type[DidlObject] | None:
     """Get DidlObject-type by upnp_class.
 
     When strict is False, the upnp_class lookup will be done ignoring string

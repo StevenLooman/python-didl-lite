@@ -17,13 +17,13 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "defusedxml>=0.6.0",
 ]
@@ -47,6 +47,7 @@ version = { attr = "didl_lite.__version__" }
 didl_lite = ["py.typed"]
 
 [tool.mypy]
+python_version = "3.11"
 check_untyped_defs = true
 disallow_untyped_calls = true
 disallow_untyped_defs = true
