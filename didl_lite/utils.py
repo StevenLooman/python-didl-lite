@@ -1,5 +1,6 @@
 """Utilities."""
 
+import functools
 import re
 
 NAMESPACES = {
@@ -42,6 +43,10 @@ def split_namespace_tag(namespaced_tag: str) -> tuple[str | None, str]:
     return namespace, tag
 
 
+# Cached: called for every attribute set on a DidlObject, with a small closed
+# set of property names. Bounded, as from_xml also passes names read from
+# documents received from other devices.
+@functools.lru_cache(maxsize=256)
 def to_camel_case(name: str) -> str:
     """Get camel case of name."""
     sub1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)

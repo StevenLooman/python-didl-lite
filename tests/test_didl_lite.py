@@ -3,7 +3,7 @@
 import pytest
 from defusedxml import ElementTree as ET
 
-from didl_lite import didl_lite
+from didl_lite import didl_lite, utils
 
 NAMESPACES = {
     "didl_lite": "urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/",
@@ -793,3 +793,13 @@ class TestDidlLite:
 
         assert b"<upnp:artist>My Artist</upnp:artist>" in xml
         assert b"<upnp:genre>My Genre</upnp:genre>" in xml
+
+    def test_to_camel_case_is_cached(self) -> None:
+        """Test to_camel_case is cached, and used cached through didl_lite."""
+        assert hasattr(utils.to_camel_case, "cache_info")
+        # didl_lite imports the name; it must be the cached function too.
+        assert didl_lite.to_camel_case is utils.to_camel_case
+
+        hits_before = utils.to_camel_case.cache_info().hits
+        didl_lite.MusicTrack(id="0", parent_id="0", title="Title", restricted="1")
+        assert utils.to_camel_case.cache_info().hits > hits_before
