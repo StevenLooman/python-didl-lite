@@ -1,1 +1,0 @@
-Cache ``to_camel_case``, speeding up building and serialising DIDL objects

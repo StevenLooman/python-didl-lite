@@ -1,3 +1,18 @@
+python-didl-lite 1.5.2 (2026-10-21)
+===================================
+
+Deprecations and Removals
+-------------------------
+
+- Drop Python 3.10 support, add Python 3.15 support (#73)
+
+
+Misc
+----
+
+- #71, #75
+
+
 python-didl-lite 1.5.1 (2026-08-21)
 ===================================
 
